@@ -1,26 +1,62 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * SELLoN 디자인 토큰
+ * - 중성색은 Tailwind 기본 slate 램프를 그대로 사용합니다. (slate-50 ~ slate-900)
+ * - 다크모드는 사용하지 않습니다.
+ */
+
+@theme {
+  /* ---------- Typography ---------- */
+  --font-sans: "Pretendard Variable", Pretendard, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  /* ---------- Brand ---------- */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-soft: #eef2ff;
+  --color-primary-muted: #e0e7ff;
+
+  /* ---------- Semantic ---------- */
+  --color-danger: #ff2056;
+  --color-danger-strong: #ec003f;
+  --color-danger-soft: #fff1f2;
+
+  --color-success: #009966;
+  --color-success-soft: #d0fae5;
+
+  --color-notify: #fb2c36;
+
+  /* ---------- Channel ---------- */
+  --color-channel-coupang: #ff5722;
+  --color-channel-naver: #03c75a;
+  --color-channel-zigzag: #ff6699;
+
+  /* ---------- Surface ---------- */
+  --color-surface-page: #f8f8fc;
+  --color-surface-card: #ffffff;
+
+  /* ---------- Radius ---------- */
+  --radius-field: 8px;
+  --radius-control: 12px;
+  --radius-icon: 16px;
+  --radius-card: 20px;
+
+  /* ---------- Shadow ---------- */
+  --shadow-card: 0 1px 1.5px rgba(0, 0, 0, 0.07);
+  --shadow-raised: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    background-color: var(--color-surface-page);
+    color: var(--color-slate-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
 }
