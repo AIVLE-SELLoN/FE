@@ -22,6 +22,7 @@ type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  children?: { href: string; label: string }[];
 };
 
 type NavGroup = {
@@ -37,17 +38,42 @@ const NAV_GROUPS: NavGroup[] = [
       { href: '/dashboard', label: '대시보드', icon: LayoutDashboard },
       { href: '/alert', label: '이상 이벤트 알림창', icon: Bell },
       { href: '/channelCompare', label: '채널 비교 분석', icon: TrendingUp },
-      { href: '/report', label: '개선 리포트', icon: FileText },
-      { href: '/monthlyReport', label: '월간 리포트', icon: Calendar },
-      { href: '/csAutomation', label: '가이드라인 리포트', icon: BookOpen },
+      { href: '/report', label: '개선 리포트', icon: FileText,
+        children: [
+          { href: '/report?tab=insight', label: 'AI 인사이트 리포트' },
+          { href: '/report?tab=history', label: '개선안 히스토리' },
+        ],
+       },
+      { href: '/monthlyReport', label: '월간 리포트', icon: Calendar,
+        children: [
+          { href: '/monthlyReport?tab=report', label: '월간 리포트' },
+          { href: '/monthlyReport?tab=list', label: '월간 리포트 목록' },
+        ],
+       },
+      { href: '/csAutomation', label: '가이드라인 리포트', icon: BookOpen,
+        children: [
+          { href: '/csAutomation?tab=create', label: '가이드라인 생성' },
+          { href: '/csAutomation?tab=history', label: '가이드라인 히스토리' },
+        ],
+       },
     ],
   },
   {
     title: '설정',
     items: [
-      { href: '/channel', label: '채널 연동 관리', icon: Link2 },
+      { href: '/channel', label: '채널 연동 관리', icon: Link2,
+        children: [
+          { href: '/channel?view=connect', label: '채널 연동' },
+          { href: '/channel?view=history', label: '채널 연동 이력' },
+        ],
+       },
       { href: '/productMapping', label: '상품 매핑 관리', icon: Package },
-      { href: '/cs', label: 'CS 문의', icon: MessageSquare },
+      { href: '/cs', label: 'CS 문의', icon: MessageSquare, 
+        children: [
+          { href: '/cs?view=inquiry', label: '1:1 문의' },
+          { href: '/cs?view=faq', label: 'FAQ' },
+        ],
+       },
       { href: '/mypage', label: '마이페이지', icon: User },
     ],
   },
@@ -57,7 +83,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-[260px] shrink-0 flex-col border-r border-slate-200 bg-surface-card">
+    <aside className="sticky top-0 flex h-screen w-[260px] shrink-0 flex-col border-r border-slate-200 bg-surface-card">
       <div className="flex items-center gap-2 p-8">
         <Sparkles className="text-primary" size={24} strokeWidth={2.5} />
         <span className="text-xl font-bold tracking-tight text-slate-800">SELLoN</span>
@@ -88,23 +114,53 @@ export default function Sidebar() {
               {group.title}
             </p>
 
-            {group.items.map(({ href, label, icon: Icon }) => {
+            {group.items.map(({ href, label, icon: Icon, children }) => {
               const isActive = pathname === href || pathname.startsWith(`${href}/`);
 
+              if (!children) {
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center gap-3 rounded-field px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary-soft text-primary'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon className="shrink-0" size={16} />
+                    <span>{label}</span>
+                  </Link>
+                );
+              }
+
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`flex items-center gap-3 rounded-field px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-primary-soft text-primary'
-                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                >
-                  <Icon className="shrink-0" size={16} />
-                  <span>{label}</span>
-                </Link>
+                <div key={href} className="group/nav relative">
+                  <Link
+                    href={href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center gap-3 rounded-field px-3 py-2.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'bg-primary-soft text-primary'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <Icon className="shrink-0" size={16} />
+                    <span>{label}</span>
+                  </Link>
+                  <div className="hidden flex-col gap-0.5 pb-1 pl-9 group-hover/nav:flex">
+                    {children.map((child) => (
+                      <Link
+                        key={child.label}
+                        href={child.href}
+                        className="rounded-field py-2 pr-3 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               );
             })}
           </div>
