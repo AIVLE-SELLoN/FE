@@ -79,9 +79,38 @@ const SEVERITY_STYLE: Record<AnomalySeverity, { bg: string; text: string }> = {
 };
 
 export default function NotificationBell() {
-  const hasUnread = notifications.length > 0;
   const [open, setOpen] = useState(false);
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const wrapRef = useRef<HTMLDivElement>(null);
+
+  const READ_IDS_STORAGE_KEY = "sellon_read_notification_ids";
+
+  // 읽음 처리한 알림 ID를 로컬 스토리지에서 복원
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(READ_IDS_STORAGE_KEY);
+      if (stored) setReadIds(new Set(JSON.parse(stored)));
+    } catch {
+      // 스토리지 접근 실패 시 무시하고 전부 안읽음으로 취급
+    }
+  }, []);
+
+  const markAsRead = (id: string) => {
+    setReadIds((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      try {
+        window.localStorage.setItem(READ_IDS_STORAGE_KEY, JSON.stringify(Array.from(next)));
+      } catch {
+        // 저장 실패해도 화면 상태는 그대로 유지
+      }
+      return next;
+    });
+  };
+
+  const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
+  const hasUnread = unreadCount > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -115,7 +144,7 @@ export default function NotificationBell() {
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
               <p className="text-sm font-bold text-slate-900">이상 이벤트 알림</p>
               <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-500">
-                {notifications.length}건
+                {unreadCount}건
               </span>
             </div>
 
@@ -123,10 +152,18 @@ export default function NotificationBell() {
               {notifications.map((n) => {
                 const Icon = TYPE_ICON[n.type];
                 const style = SEVERITY_STYLE[n.severity];
+                const isRead = readIds.has(n.id);
                 return (
-                  <div
+                  <Link
                     key={n.id}
-                    className="flex items-start gap-3 border-b border-slate-50 px-4 py-3 last:border-b-0 hover:bg-slate-50"
+                    href={`/alert/${n.id}`}
+                    onClick={() => {
+                      markAsRead(n.id);
+                      setOpen(false);
+                    }}
+                    className={`flex items-start gap-3 border-b border-slate-50 px-4 py-3 last:border-b-0 hover:bg-slate-50 ${
+                      isRead ? "opacity-50" : ""
+                    }`}
                   >
                     <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${style.bg}`}>
                       <Icon className={`h-3.5 w-3.5 ${style.text}`} />
@@ -141,7 +178,7 @@ export default function NotificationBell() {
                       <p className="pt-1 text-xs leading-relaxed text-slate-500">{n.detail}</p>
                       <p className="pt-1 text-[11px] text-slate-400">{n.time}</p>
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

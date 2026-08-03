@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useEffect} from "react"; 
 import NotificationBell from "@/components/common/NotificationBell";
@@ -189,6 +189,18 @@ function CsPageContent() {
   const detail = inquiryDetails[selectedInquiryId ?? ""] ?? fallbackDetail;
 
   const router = useRouter();
+  const pathname = usePathname();
+
+  // 탭만 바꾸면 사이드바가 보는 URL과 안 맞아서, 섹션이 실제로 바뀔 때는
+  // URL도 같이 갱신해서 사이드바 활성 표시가 따라오게 함
+  const goToFaq = () => {
+    setTab("faq");
+    router.push(`${pathname}?view=faq`, { scroll: false });
+  };
+  const goToInquiryList = () => {
+    setTab("list");
+    router.push(`${pathname}?view=inquiry`, { scroll: false });
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
@@ -213,7 +225,7 @@ function CsPageContent() {
 
   
   const [activeCategory, setActiveCategory] = useState<"전체" | FaqCategory>("전체");
-  const [openId, setOpenId] = useState<number | null>(null);
+  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
 
   const filteredFaqs = useMemo(
     () => (activeCategory === "전체" ? faqItems : faqItems.filter((f) => f.category === activeCategory)),
@@ -229,7 +241,7 @@ function CsPageContent() {
           <p className="text-sm text-slate-500">담당자 확인 후 답변드릴게요.</p>
           <div className="mt-4 flex gap-3">
             <button
-              onClick={() => setTab("list")}
+              onClick={goToInquiryList}
               className="rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600"
             >
               문의 내역 보기
@@ -246,25 +258,28 @@ function CsPageContent() {
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
         <header className="flex h-[52px] items-center gap-1.5 border-b border-slate-200 bg-white px-6 text-xs">
           <button
-            onClick={() => setTab("list")}
-            className={tab === "list" || tab === "detail" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
+            onClick={goToInquiryList}
+            className="text-slate-500 hover:text-slate-700"
           >
-            문의 내역
+            CS 문의
           </button>
-          <span className="text-slate-300">/</span>
-          <button
-            onClick={() => setTab("new")}
-            className={tab === "new" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
-          >
-            새 문의 작성
-          </button>
-          <span className="text-slate-300">/</span>
-          <button
-            onClick={() => setTab("faq")}
-            className={tab === "faq" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
-          >
-            FAQ
-          </button>
+          <span className="text-slate-300">{'>'}</span>
+          {tab === "faq" ? (
+            <span className="font-medium text-slate-900">FAQ</span>
+          ) : (
+            <>
+              <button
+                onClick={goToInquiryList}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                1:1 문의
+              </button>
+              <span className="text-slate-300">{'>'}</span>
+              <span className="font-medium text-slate-900">
+                {tab === "new" ? "새 문의 작성" : "문의 내역"}
+              </span>
+            </>
+          )}
           <div className="ml-auto">
             <NotificationBell />
           </div>
@@ -391,7 +406,7 @@ function CsPageContent() {
                 </p>
               </div>
               <button
-                onClick={() => setTab("faq")}
+                onClick={goToFaq}
                 className="shrink-0 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 hover:bg-indigo-50"
               >
                 FAQ 바로가기
@@ -402,7 +417,7 @@ function CsPageContent() {
         )}
         {tab === "detail" && (
           <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-8 py-12">
-          <button onClick={() => setTab("list")} className="flex w-fit items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
+          <button onClick={goToInquiryList} className="flex w-fit items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
             <ChevronLeft className="h-3.5 w-3.5" />
             문의내역으로 돌아가기
           </button>
@@ -471,7 +486,7 @@ function CsPageContent() {
 
           <div className="flex justify-center gap-3 pt-2">
             <button
-              onClick={() => setTab("list")}
+              onClick={goToInquiryList}
               className="rounded-xl border border-slate-200 px-8 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
               목록으로
@@ -490,7 +505,7 @@ function CsPageContent() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-slate-900">1:1 문의하기</h1>
             <button
-              onClick={() => setTab("list")}
+              onClick={goToInquiryList}
               className="flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-600"
             >
               문의 내역 보기
@@ -647,7 +662,7 @@ function CsPageContent() {
                 </p>
               </div>
               <button
-                onClick={() => setTab("faq")}
+                onClick={goToFaq}
                 className="shrink-0 rounded-xl bg-white px-8 py-3 text-sm font-bold text-indigo-600 hover:bg-indigo-50"
               >
                 FAQ 바로가기
@@ -692,14 +707,22 @@ function CsPageContent() {
             <div className="flex flex-col gap-2">
               {filteredFaqs.map((f) => {
                 const style = FAQ_CATEGORY_STYLE[f.category];
-                const isOpen = openId === f.id;
+                const isOpen = openIds.has(f.id);
+                const toggleOpen = () => {
+                  setOpenIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(f.id)) next.delete(f.id);
+                    else next.add(f.id);
+                    return next;
+                  });
+                };
                 return (
                   <div
                     key={f.id}
                     className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_2px_-1px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.1)]"
                   >
                     <button
-                      onClick={() => setOpenId(isOpen ? null : f.id)}
+                      onClick={toggleOpen}
                       className="flex w-full items-center gap-5 p-5 text-left"
                     >
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-bold text-slate-500">

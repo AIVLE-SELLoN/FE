@@ -7,6 +7,7 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
+import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroDashboardMock from "@/components/landing/HeroDashboardMock";
@@ -91,12 +92,18 @@ export default function Home() {
 
             <div className="flex flex-col items-start gap-4">
               <div className="flex flex-wrap items-center gap-4">
-                <button className="rounded-2xl bg-[#101828] px-8 py-4 text-base font-bold tracking-tight text-white transition-transform hover:scale-[1.02] sm:text-lg">
+                <Link
+                  href="/signup"
+                  className="rounded-2xl bg-[#101828] px-8 py-4 text-base font-bold tracking-tight text-white transition-transform hover:scale-[1.02] sm:text-lg"
+                >
                   무료로 채널 연결하기
-                </button>
-                <button className="rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-bold tracking-tight text-[#1A1F27] transition-colors hover:bg-slate-50 sm:text-lg">
+                </Link>
+                <Link
+                  href="/cs?view=inquiry"
+                  className="rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-bold tracking-tight text-[#1A1F27] transition-colors hover:bg-slate-50 sm:text-lg"
+                >
                   서비스 소개서 받기
-                </button>
+                </Link>
               </div>
               <div className="flex items-center gap-3 pt-2">
                 <div className="flex items-center">
@@ -159,7 +166,7 @@ export default function Home() {
               핵심 기능
             </span>
           </span>
-          <h2 className="max-w-2xl text-3xl font-extrabold leading-tight tracking-tight text-[#1A1F27] sm:text-4xl">
+          <h2 className="whitespace-nowrap text-3xl font-extrabold leading-tight tracking-tight text-[#1A1F27] sm:text-4xl">
             감지부터 개선안 승인까지, 한 흐름으로 이어집니다
           </h2>
         </div>
@@ -332,13 +339,19 @@ export default function Home() {
           </p>
           <div className="flex flex-col items-center gap-6 pt-6">
             <div className="flex flex-col items-center gap-4 sm:flex-row">
-              <button className="flex items-center gap-2 rounded-2xl bg-indigo-500 px-10 py-5 text-lg font-bold text-white shadow-2xl shadow-indigo-200 transition-transform hover:scale-[1.02]">
+              <Link
+                href="/signup"
+                className="flex items-center gap-2 rounded-2xl bg-indigo-500 px-10 py-5 text-lg font-bold text-white shadow-2xl shadow-indigo-200 transition-transform hover:scale-[1.02]"
+              >
                 무료로 시작하기
                 <ArrowRight className="h-4 w-4" />
-              </button>
-              <button className="rounded-2xl border border-slate-200 bg-white px-10 py-5 text-lg font-bold text-[#1A1F27] transition-colors hover:bg-slate-50">
+              </Link>
+              <Link
+                href="/cs?view=inquiry"
+                className="rounded-2xl border border-slate-200 bg-white px-10 py-5 text-lg font-bold text-[#1A1F27] transition-colors hover:bg-slate-50"
+              >
                 도입 문의하기
-              </button>
+              </Link>
             </div>
             <p className="text-sm text-slate-400">
               신용카드 등록 없이 시작 · 언제든 채널 연결 해제 가능

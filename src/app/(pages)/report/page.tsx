@@ -1,21 +1,21 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { useRouter, usePathname } from "next/navigation";
-import NotificationBell from "@/components/common/NotificationBell";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
-  Bell,
+  ChevronRight,
   X,
   ShieldCheck,
   Sparkles,
   RotateCw,
   Quote,
   ArrowLeft,
+  ArrowRight,
   CheckCircle2,
   FileEdit,
   RotateCcw,
 } from "lucide-react";
+import NotificationBell from "@/components/common/NotificationBell";
 
 
 
@@ -80,12 +80,12 @@ const initialHistory: HistoryItem[] = [
 function ReportPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const pathname = usePathname();
 
   const view = searchParams.get("tab") === "history" ? "history" : "insight";
-
   const setView = (next: "insight" | "history") => {
-    router.push(`${pathname}?tab=${next}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", next);
+    router.push(`?${params.toString()}`);
   };
 
   const [stage, setStage] = useState<"draft" | "review">("draft");
@@ -103,6 +103,7 @@ function ReportPageContent() {
     setTimeout(() => {
       setApplying(false);
       setStage("review");
+      setDescription(suggestedDescription); // 디자인 기준: 리뷰 단계 진입 시 AI 제안 상품설명이 바로 채워져야 함
     }, 1200);
   };
 
@@ -133,25 +134,18 @@ function ReportPageContent() {
 
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
         <header className="flex h-[52px] items-center gap-1.5 border-b border-slate-200 bg-white px-6 text-xs">
-          <button
-            onClick={() => setView("insight")}
-            className={view === "insight" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
-          >
-            AI 인사이트 리포트
-          </button>
-          <span className="text-slate-300">/</span>
-          <button
-            onClick={() => setView("history")}
-            className={view === "history" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
-          >
-            개선안 히스토리
-          </button>
+          <span className="text-slate-400">개선 리포트</span>
+          <ChevronRight className="h-3 w-3 text-slate-300" />
+          <span className="font-medium text-slate-900">
+            {view === "insight" ? "AI 인사이트 리포트" : "개선안 히스토리"}
+          </span>
           <div className="ml-auto">
             <NotificationBell />
           </div>
         </header>
 
         {view === "insight" ? (
+          stage === "draft" ? (
           <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-slate-900">AI 인사이트 리포트</h1>
@@ -159,7 +153,6 @@ function ReportPageContent() {
               onClick={() => setView("history")}
               className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-slate-600"
             >
-              <X className="h-3.5 w-3.5" />
               건너뛰기
             </button>
           </div>
@@ -178,160 +171,182 @@ function ReportPageContent() {
           </div>
 
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-            <p className="text-sm font-bold text-slate-900">
-              {stage === "draft" ? "CS 문의 근거 요약" : "CS 문의 근거"}
-            </p>
+            <p className="text-sm font-bold text-slate-900">CS 문의 근거 요약</p>
             <p className="pt-2 text-sm leading-relaxed text-slate-600">{insight.csEvidence}</p>
           </div>
 
-          {stage === "draft" && (
-            <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-indigo-600" />
-                <p className="text-sm font-bold text-indigo-700">확신도</p>
-                <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
-                  {insight.confidence}
-                </span>
-              </div>
-              <p className="pt-2 text-sm leading-relaxed text-indigo-700">{insight.confidenceReason}</p>
+          <div className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-indigo-600" />
+              <p className="text-sm font-bold text-indigo-700">확신도</p>
+              <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-[11px] font-bold text-white">
+                {insight.confidence}
+              </span>
             </div>
-          )}
+            <p className="pt-2 text-sm leading-relaxed text-indigo-700">{insight.confidenceReason}</p>
+          </div>
 
           <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
             <p className="text-sm font-bold text-slate-900">유사 사례</p>
             <p className="pt-2 text-sm leading-relaxed text-slate-600">{insight.similarCase}</p>
           </div>
 
-          {stage === "draft" ? (
-            <>
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-                <p className="pb-3 text-sm font-bold text-slate-900">개선안</p>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={4}
-                  placeholder="개선안을 입력하세요..."
-                  className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <p className="pb-3 text-sm font-bold text-slate-900">개선안</p>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={4}
+              placeholder="개선안을 입력하세요..."
+              className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
 
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold text-slate-900">근거 데이터 (상세페이지 인용)</p>
-                  <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
-                    <CheckCircle2 className="h-3 w-3" />
-                    근거 확인됨
-                  </span>
-                </div>
-                <div className="mt-3 flex items-start gap-2 rounded-xl bg-slate-50 p-4">
-                  <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300" />
-                  <p className="text-sm italic text-slate-600">{insight.sourceQuote}</p>
-                </div>
-                <p className="pt-2 text-xs text-slate-400">출처 필드: {insight.sourceField}</p>
-              </div>
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-slate-900">근거 데이터 (상세페이지 인용)</p>
+              <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-600">
+                <CheckCircle2 className="h-3 w-3" />
+                근거 확인됨
+              </span>
+            </div>
+            <div className="mt-3 flex items-start gap-2 rounded-xl bg-slate-50 p-4">
+              <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300" />
+              <p className="text-sm italic text-slate-600">{insight.sourceQuote}</p>
+            </div>
+            <p className="pt-2 text-xs text-slate-400">출처 필드: {insight.sourceField}</p>
+          </div>
 
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setRejectModalOpen(true)}
-                  disabled={regenerating}
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-60"
-                >
-                  <RotateCw className={"h-3.5 w-3.5 " + (regenerating ? "animate-spin" : "")} />
-                  {regenerating ? "재분석 중..." : "분석 재요청"}
-                </button>
-                <button
-                  onClick={handleApplyProposal}
-                  disabled={applying}
-                  className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600 disabled:opacity-60"
-                >
-                  {applying && <Sparkles className="h-3.5 w-3.5 animate-pulse" />}
-                  {applying ? "반영 중..." : "개선안 반영하기"}
-                </button>
-              </div>
-            </>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setRejectModalOpen(true)}
+              disabled={regenerating}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+            >
+              <RotateCw className={"h-3.5 w-3.5 " + (regenerating ? "animate-spin" : "")} />
+              {regenerating ? "재분석 중..." : "분석 재요청"}
+            </button>
+            <button
+              onClick={handleApplyProposal}
+              disabled={applying}
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600 disabled:opacity-60"
+            >
+              {applying && <Sparkles className="h-3.5 w-3.5 animate-pulse" />}
+              {applying ? "반영 중..." : "개선안 반영하기"}
+            </button>
+          </div>
+        </main>
           ) : (
-            <>
-              <div className="rounded-2xl border border-indigo-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-                <p className="text-sm font-bold text-slate-900">개선안</p>
-                <p className="whitespace-pre-line pt-2 text-sm leading-relaxed text-slate-600">
-                  {generatedProposal}
-                </p>
-              </div>
+          <main className="flex w-full flex-col gap-6 px-7 py-10">
+          <h1 className="text-xl font-bold text-slate-900">개선안 반영</h1>
 
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-                <p className="text-sm font-bold text-slate-900">원문 근거</p>
-                <p className="pt-1 text-xs font-semibold text-slate-400">{insight.sourceField}</p>
-                <div className="mt-3 flex items-start gap-2 rounded-xl bg-slate-50 p-4">
-                  <Quote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300" />
-                  <p className="text-sm italic text-slate-600">{insight.sourceQuote}</p>
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <div className="flex">
+              <div className="flex w-full max-w-[420px] shrink-0 flex-col gap-5 border-r border-slate-100 p-6">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-bold text-slate-900">개선안</p>
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600">
+                      {insight.confidence}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-line pt-2 text-sm leading-relaxed text-slate-600">
+                    {generatedProposal}
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-1.5 border-t border-slate-100 pt-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">CS 문의 근거</p>
+                  <p className="text-xs leading-relaxed text-slate-500">{insight.csEvidence}</p>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">원문 근거</p>
+                    <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600">
+                      {insight.sourceField}
+                    </span>
+                  </div>
+                  <div className="border-l-2 border-indigo-100 pl-3">
+                    <p className="text-xs italic leading-relaxed text-slate-500">{insight.sourceQuote}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">유사 사례</p>
+                  <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+                    <p className="text-xs leading-relaxed text-slate-600">{insight.similarCase}</p>
+                  </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-                <div className="flex items-center justify-between">
+              <div className="flex flex-1 flex-col">
+                <div className="border-b border-slate-100 px-6 py-4">
                   <p className="text-sm font-bold text-slate-900">상품 설명</p>
-                  {!savedDescription && (
-                    <button
-                      onClick={() => setDescription(suggestedDescription)}
-                      className="flex items-center gap-1 text-xs font-bold text-indigo-500 hover:underline"
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      AI 초안 불러오기
-                    </button>
+                </div>
+
+                <div className="flex-1 p-6">
+                  {savedDescription ? (
+                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                      <p className="flex items-center gap-1.5 pb-2 text-xs font-bold text-emerald-700">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        저장 완료
+                      </p>
+                      <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700">
+                        {savedDescription}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setDescription(savedDescription);
+                          setSavedDescription(null);
+                        }}
+                        className="mt-3 flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-700"
+                      >
+                        <FileEdit className="h-3 w-3" />
+                        다시 수정하기
+                      </button>
+                    </div>
+                  ) : (
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="상품 설명을 직접 수정하세요..."
+                      className="h-full min-h-[420px] w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
                   )}
                 </div>
-
-                {savedDescription ? (
-                  <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 p-4">
-                    <p className="flex items-center gap-1.5 pb-2 text-xs font-bold text-emerald-700">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      저장 완료
-                    </p>
-                    <p className="whitespace-pre-line text-sm leading-relaxed text-slate-700">
-                      {savedDescription}
-                    </p>
-                    <button
-                      onClick={() => {
-                        setDescription(savedDescription);
-                        setSavedDescription(null);
-                      }}
-                      className="mt-3 flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-700"
-                    >
-                      <FileEdit className="h-3 w-3" />
-                      다시 수정하기
-                    </button>
-                  </div>
-                ) : (
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={8}
-                    placeholder="상품 설명을 직접 수정하세요..."
-                    className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                )}
               </div>
+            </div>
 
-              <div className="flex justify-end gap-3">
+            <div className="flex items-center justify-between border-t border-slate-100 px-7 py-3.5">
+              <button
+                onClick={() => setStage("draft")}
+                className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                이전으로
+              </button>
+              {!savedDescription ? (
                 <button
-                  onClick={() => setStage("draft")}
-                  className="flex items-center gap-1.5 rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                  onClick={handleSaveDescription}
+                  disabled={!description.trim()}
+                  className="rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  이전으로
+                  상품 설명 저장하기
                 </button>
-                {!savedDescription && (
-                  <button
-                    onClick={handleSaveDescription}
-                    className="rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600"
-                  >
-                    상품 설명 저장하기
-                  </button>
-                )}
-              </div>
-            </>
-          )}
+              ) : (
+                <button
+                  onClick={() => setView("history")}
+                  className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600"
+                >
+                  개선안 히스토리로 가기
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
         </main>
+          )
         ) : (
           <main className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-6 py-10">
           <h1 className="text-xl font-bold text-slate-900">개선안 히스토리</h1>

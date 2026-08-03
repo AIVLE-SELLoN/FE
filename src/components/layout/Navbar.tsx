@@ -39,10 +39,13 @@ export default function Navbar() {
           >
             로그인
           </Link>
-          <button className="flex items-center gap-1.5 rounded-xl bg-[#101828] px-4 py-2.5 text-[15px] font-semibold tracking-tight text-white transition-transform hover:scale-[1.02] sm:px-6">
+          <Link
+            href="/signup"
+            className="flex items-center gap-1.5 rounded-xl bg-[#101828] px-4 py-2.5 text-[15px] font-semibold tracking-tight text-white transition-transform hover:scale-[1.02] sm:px-6"
+          >
             무료로 시작하기
             <span aria-hidden>→</span>
-          </button>
+          </Link>
         </div>
       </div>
     </header>

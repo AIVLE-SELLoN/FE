@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import NotificationBell from "@/components/common/NotificationBell";
 import {
@@ -15,9 +15,9 @@ import {
   Loader2,
   CheckCircle2,
   FileText,
-  Upload,
 } from "lucide-react";
 import ProductSelect from "@/components/common/ProductSelect";
+import ErrorState from "@/components/common/ErrorState";
 
 const kpiCards = [
   {
@@ -215,6 +215,10 @@ const reports: ReportRow[] = [
 ];
 
 
+// TODO: 실제로는 상품별 월간 CS 표본 수량을 API에서 받아와 임계치와 비교해야 해요.
+// 지금은 목데이터로 특정 상품만 표본 부족 상태로 취급합니다.
+const LOW_CS_SAMPLE_PRODUCT_IDS = new Set(["P003"]);
+
 function MonthlyReportPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -229,6 +233,7 @@ function MonthlyReportPageContent() {
   const [productId, setProductId] = useState("P001");
   const [slideIndex, setSlideIndex] = useState(0);
   const slide = gapSlides[slideIndex];
+  const hasLowCsSample = LOW_CS_SAMPLE_PRODUCT_IDS.has(productId);
 
   const [downloading, setDownloading] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
@@ -288,13 +293,20 @@ function MonthlyReportPageContent() {
   };
 
   const [selected, setSelected] = useState<string[]>([]);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [downloadingSelected, setDownloadingSelected] = useState(false);
 
   const allChecked = selected.length === reports.length;
   const toggleAll = () => setSelected(allChecked ? [] : reports.map((r) => r.id));
   const toggleOne = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const handleDownloadSelected = async () => {
+    if (selected.length === 0) return;
+    setDownloadingSelected(true);
+    // TODO: 실제로는 선택된 리포트 id들을 백엔드에 넘겨 파일(또는 zip)을 받아와야 해요.
+    await new Promise((res) => setTimeout(res, 800));
+    setDownloadingSelected(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -303,16 +315,16 @@ function MonthlyReportPageContent() {
         <header className="flex h-[52px] items-center gap-1.5 border-b border-slate-200 bg-white px-6 text-xs">
           <button
             onClick={() => setView("report")}
-            className={view === "report" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
+            className="text-slate-500 hover:text-slate-700"
           >
             월간 리포트
           </button>
-          <span className="text-slate-300">/</span>
+          <span className="text-slate-300">{' > '}</span>
           <button
             onClick={() => setView("list")}
-            className={view === "list" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
+            className="font-bold text-slate-900"
           >
-            월간 리포트 목록
+            {view === "list" ? "월간 리포트 목록" : "월간 리포트"}
           </button>
           <div className="ml-auto">
             <NotificationBell />
@@ -323,28 +335,41 @@ function MonthlyReportPageContent() {
           <main className="flex flex-col gap-5 p-7">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-slate-900">월간 리포트</h1>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setEmailModalOpen(true)}
-                className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50"
-              >
-                <Mail className="h-3.5 w-3.5 text-indigo-500" />
-                이메일 전송
-              </button>
-              <button
-                onClick={handleDownloadPdf}
-                disabled={downloading}
-                className="flex items-center gap-2 rounded-xl bg-indigo-500 px-6 py-2.5 text-sm font-bold text-white shadow-[0_10px_15px_-3px_#E0E7FF] hover:bg-indigo-600 disabled:opacity-60"
-              >
-                {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                {downloading ? "생성 중..." : "리포트 다운로드 (PDF)"}
-              </button>
-            </div>
+            {!hasLowCsSample && (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEmailModalOpen(true)}
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50"
+                >
+                  <Mail className="h-3.5 w-3.5 text-indigo-500" />
+                  이메일 전송
+                </button>
+                <button
+                  onClick={handleDownloadPdf}
+                  disabled={downloading}
+                  className="flex items-center gap-2 rounded-xl bg-indigo-500 px-6 py-2.5 text-sm font-bold text-white shadow-[0_10px_15px_-3px_#E0E7FF] hover:bg-indigo-600 disabled:opacity-60"
+                >
+                  {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                  {downloading ? "생성 중..." : "리포트 다운로드 (PDF)"}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-5 px-5">
             <ProductSelect value={productId} onChange={setProductId} />
 
+            {hasLowCsSample ? (
+              <ErrorState
+                title="해당 상품은 월간 CS 표본 수량 부족으로 인하여 보고서 작성이 보류되었습니다."
+                description="데이터가 누적되면 분석이 시작됩니다."
+                titleMaxWidth="760px"
+                titleSize="md"
+                onRetry={() => window.location.reload()}
+                onGoHome={() => router.push("/")}
+              />
+            ) : (
+            <>
             {/* KPI cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {kpiCards.map((k) => (
@@ -627,6 +652,8 @@ function MonthlyReportPageContent() {
                 ))}
               </div>
             </div>
+            </>
+            )}
           </div>
         </main>
         ) : (
@@ -634,22 +661,26 @@ function MonthlyReportPageContent() {
           <div className="flex items-center justify-between pr-10">
             <h1 className="text-2xl font-bold text-slate-900">월별 리포트 목록</h1>
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleDownloadSelected}
+              disabled={selected.length === 0 || downloadingSelected}
               className={
                 "flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold " +
-                (uploadedFile ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-400 hover:bg-slate-200")
+                (selected.length > 0
+                  ? "bg-indigo-500 text-white hover:bg-indigo-600"
+                  : "cursor-not-allowed bg-slate-100 text-slate-400")
               }
             >
-              <Upload className="h-3.5 w-3.5" />
-              {uploadedFile ? uploadedFile.name : "파일을 선택하세요"}
+              {downloadingSelected ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              {downloadingSelected
+                ? "다운로드 중..."
+                : selected.length > 0
+                  ? `선택 항목 다운로드 (${selected.length})`
+                  : "파일을 선택하세요"}
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => setUploadedFile(e.target.files?.[0] ?? null)}
-            />
           </div>
 
           <div className="flex flex-col gap-4 px-5">

@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Bell, ChevronRight, Plus, LogIn, CheckCircle2, AlertTriangle, RotateCw, ChevronDown, RotateCcw, Info } from "lucide-react";
+import { Plus, LogIn, CheckCircle2, AlertTriangle, RotateCw, ChevronDown, RotateCcw, Info } from "lucide-react";
 import ChannelErrorModal from "@/components/common/ChannelErrorModal";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import NotificationBell from "@/components/common/NotificationBell";
+import Link from "next/link";
 
 type ChannelStatus = "connected" | "disconnected" | "error";
 
@@ -89,10 +90,17 @@ export default function ChannelPage() {
   const handleConnect = (id: string, apiKey: string) => {
     // TODO: 백엔드 채널 연결 API 붙으면 이 부분을 실제 fetch 호출로 교체
     // 지금은 프론트 단에서만 "입력한 키로 연동 시도" 흐름을 보여주는 자리표시자예요.
+    //
+    // 테스트용 실패 트리거: API 키에 "FAIL"이라고 입력하면 연결 실패(error 상태)로 처리돼요.
+    // 백엔드 API 붙으면 이 분기는 지우고 실제 응답의 성공/실패 여부로 바꾸면 됩니다.
+    const isMockFailure = apiKey.trim().toUpperCase() === "FAIL";
+
     setChannels((prev) =>
       prev.map((c) =>
         c.id === id
-          ? { ...c, status: "connected", apiKeyValue: "•".repeat(Math.min(apiKey.length, 20)) }
+          ? isMockFailure
+            ? { ...c, status: "error", apiKeyValue: "인증 실패" }
+            : { ...c, status: "connected", apiKeyValue: "•".repeat(Math.min(apiKey.length, 20)) }
           : c,
       ),
     );
@@ -144,23 +152,16 @@ export default function ChannelPage() {
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
         <header className="flex h-[52px] items-center justify-between border-b border-slate-200 bg-white px-6">
           <div className="flex items-center gap-1.5 text-xs">
-            <span className={view === "connect" ? "font-medium text-slate-900" : "text-slate-500"}>
-              채널 연동 관리
-            </span>
-            <ChevronRight className="h-3 w-3 text-slate-400" />
             <button
               onClick={() => setView("connect")}
-              className={view === "connect" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
+              className="text-slate-500 hover:text-slate-700"
             >
-              채널 연동
+              채널 연동 관리
             </button>
-            <span className="text-slate-300">/</span>
-            <button
-              onClick={() => setView("history")}
-              className={view === "history" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
-            >
-              채널 연동 이력
-            </button>
+            <span className="text-slate-300">{'>'}</span>
+            <span className="font-medium text-slate-900">
+              {view === "history" ? "채널 연동 이력" : "채널 연동"}
+            </span>
           </div>
           <NotificationBell />
         </header>
@@ -257,9 +258,12 @@ export default function ChannelPage() {
                   현재 12개 이상의 커머스 채널 연동을 준비 중입니다. 원하는 채널이 있다면
                   고객센터로 제안해 주세요.
                 </p>
-                <button className="mt-1 self-start rounded-lg bg-white px-5 py-2.5 text-[13px] font-bold text-indigo-900">
+                <Link
+                  href="/cs?view=inquiry"
+                  className="mt-1 self-start rounded-lg bg-white px-5 py-2.5 text-[13px] font-bold text-indigo-900"
+                >
                   채널 추가 요청하기
-                </button>
+                </Link>
               </div>
               <div className="flex gap-3 opacity-40">
                 {["W", "A", "S"].map((letter) => (
@@ -451,6 +455,10 @@ export default function ChannelPage() {
           setErrorModalChannel(null);
         }}
         onClose={() => setErrorModalChannel(null)}
+        onContact={() => {
+          router.push("/cs?view=inquiry");
+          setErrorModalChannel(null);
+        }}
       />
     </div>
   );
@@ -524,14 +532,25 @@ function ChannelCard({
             <label htmlFor={`${channel.id}-api-key`} className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
               API 키
             </label>
-            <input
-              id={`${channel.id}-api-key`}
-              type="text"
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="API 키를 입력해주세요."
-              className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+            <div className="relative">
+              <input
+                id={`${channel.id}-api-key`}
+                type={revealKey ? "text" : "password"}
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                placeholder="API 키를 입력해주세요."
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-14 text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              {apiKeyInput.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setRevealKey((v) => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[11px] font-bold text-indigo-600"
+                >
+                  {revealKey ? "숨기기" : "보기"}
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <>

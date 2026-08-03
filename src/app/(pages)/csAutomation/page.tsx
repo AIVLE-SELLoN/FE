@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import NotificationBell from "@/components/common/NotificationBell";
 import {
@@ -16,7 +16,7 @@ import {
   Send,
   CheckCircle2,
   FileText,
-  Upload,
+  Download,
 } from "lucide-react";
 
 
@@ -265,9 +265,8 @@ function CsAutomationPageContent() {
   };
 
   const [historyQuery, setHistoryQuery] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<string[]>([]);
+  const [downloadingSelected, setDownloadingSelected] = useState(false);
 
   const filteredGuidelines = useMemo(
     () =>
@@ -284,6 +283,14 @@ function CsAutomationPageContent() {
   const toggleOne = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
+  const handleDownloadSelected = async () => {
+    if (selected.length === 0) return;
+    setDownloadingSelected(true);
+    // TODO: 실제로는 선택된 가이드라인 id들을 백엔드에 넘겨 파일(또는 zip)을 받아와야 해요.
+    await new Promise((res) => setTimeout(res, 800));
+    setDownloadingSelected(false);
+  };
+
   return (
     <div className="flex min-h-screen bg-white">
 
@@ -294,17 +301,14 @@ function CsAutomationPageContent() {
               setTab("create");
               setSubView("list");
             }}
-            className={tab === "create" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
+            className="text-slate-500 hover:text-slate-700"
           >
-            가이드라인 생성
+            가이드라인 리포트
           </button>
-          <span className="text-slate-300">/</span>
-          <button
-            onClick={() => setTab("history")}
-            className={tab === "history" ? "font-medium text-slate-900" : "text-slate-500 hover:text-slate-700"}
-          >
-            가이드라인 히스토리
-          </button>
+          <span className="text-slate-300">{'>'}</span>
+          <span className="font-medium text-slate-900">
+            {tab === "history" ? "가이드라인 히스토리" : "가이드라인 생성"}
+          </span>
           <div className="ml-auto">
             <NotificationBell />
           </div>
@@ -598,22 +602,26 @@ function CsAutomationPageContent() {
           <div className="flex items-center justify-between pb-1">
             <h1 className="text-2xl font-bold text-slate-900">가이드라인 히스토리</h1>
             <button
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleDownloadSelected}
+              disabled={selected.length === 0 || downloadingSelected}
               className={
                 "flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold " +
-                (uploadedFile ? "bg-indigo-50 text-indigo-600" : "bg-slate-100 text-slate-400 hover:bg-slate-200")
+                (selected.length > 0
+                  ? "bg-indigo-500 text-white hover:bg-indigo-600"
+                  : "cursor-not-allowed bg-slate-100 text-slate-400")
               }
             >
-              <Upload className="h-3.5 w-3.5" />
-              {uploadedFile ? uploadedFile.name : "파일을 선택하세요"}
+              {downloadingSelected ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              {downloadingSelected
+                ? "다운로드 중..."
+                : selected.length > 0
+                  ? `선택 항목 다운로드 (${selected.length})`
+                  : "파일을 선택하세요"}
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={(e) => setUploadedFile(e.target.files?.[0] ?? null)}
-            />
           </div>
 
           <div className="relative w-[320px]">

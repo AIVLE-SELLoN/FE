@@ -163,7 +163,7 @@ export default function FindAccountPage() {
         <div className="flex flex-1 items-center justify-center bg-[#F9F8FC] px-6 py-12">
           <div className="flex aspect-square w-full max-w-[430px] items-center justify-center overflow-hidden rounded-3xl bg-white p-6 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)]">
             <img
-              src="https://placehold.co/514x486"
+              src="/mascot-pencil.png"
               alt="SELLoN 계정 찾기 일러스트"
               className="h-full w-full object-contain"
             />

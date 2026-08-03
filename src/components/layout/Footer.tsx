@@ -1,7 +1,17 @@
 import { AlertTriangle, Instagram, Youtube, Facebook } from "lucide-react";
+import Link from "next/link";
 
-const serviceLinks = ["기능 소개", "가격 안내", "도입 사례"];
-const supportLinks = ["문의하기", "이용약관", "개인정보 처리방침"];
+// 가격 안내 / 이용약관 / 개인정보 처리방침 페이지는 아직 안 만들어져서 임시 경로예요. TODO: 실제 페이지 생기면 교체
+const serviceLinks = [
+  { label: "기능 소개", href: "/#features" },
+  { label: "가격 안내", href: "/pricing" },
+  { label: "도입 사례", href: "/#testimonials" },
+];
+const supportLinks = [
+  { label: "문의하기", href: "/cs?view=inquiry" },
+  { label: "이용약관", href: "/terms" },
+  { label: "개인정보 처리방침", href: "/privacy" },
+];
 
 export default function Footer() {
   return (
@@ -30,11 +40,13 @@ export default function Footer() {
               </h4>
               <ul className="flex flex-col gap-4">
                 {serviceLinks.map((item) => (
-                  <li
-                    key={item}
-                    className="text-[13px] text-slate-500 hover:text-slate-700"
-                  >
-                    {item}
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
+                      className="text-[13px] text-slate-500 hover:text-slate-700"
+                    >
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -45,11 +57,13 @@ export default function Footer() {
               </h4>
               <ul className="flex flex-col gap-4">
                 {supportLinks.map((item) => (
-                  <li
-                    key={item}
-                    className="text-[13px] text-slate-500 hover:text-slate-700"
-                  >
-                    {item}
+                  <li key={item.label}>
+                    <Link
+                      href={item.href}
+                      className="text-[13px] text-slate-500 hover:text-slate-700"
+                    >
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

@@ -194,161 +194,158 @@ export default function MyPage() {
             )}
           </div>
 
-          {editing && (
-            <>
-              {/* Identifier key */}
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-                <p className="pb-2 text-sm font-bold text-slate-900">식별자 키</p>
-                <p className="rounded-lg bg-slate-50 px-3 py-2.5 font-mono text-xs text-slate-500">
-                  sLN-efa4eb20-84f6-11f1-bb2c-a918e3391289
-                </p>
-                <div className="flex justify-end pt-4">
-                  <button
-                    onClick={() => setResetMailSent(true)}
-                    disabled={resetMailSent}
-                    className="flex items-center gap-1.5 rounded-lg border border-indigo-200 px-4 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Mail className="h-3.5 w-3.5" />
-                    {resetMailSent ? "메일을 보냈어요" : "재설정 메일 받기"}
-                  </button>
-                </div>
+          {/* Identifier key */}
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <p className="pb-2 text-sm font-bold text-slate-900">식별자 키</p>
+            <p className="rounded-lg bg-slate-50 px-3 py-2.5 font-mono text-xs text-slate-500">
+              sLN-efa4eb20-84f6-11f1-bb2c-a918e3391289
+            </p>
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={() => setResetMailSent(true)}
+                disabled={resetMailSent}
+                className="flex items-center gap-1.5 rounded-lg border border-indigo-200 px-4 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                {resetMailSent ? "메일을 보냈어요" : "재설정 메일 받기"}
+              </button>
+            </div>
+          </div>
+
+          {/* Monthly report email settings */}
+          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
+            <p className="text-sm font-bold text-slate-900">월간 리포트 이메일</p>
+            <p className="pt-1 text-xs leading-relaxed text-slate-400">
+              매월 지정한 날짜와 시간에 월간 리포트 요약을 아래 수신 이메일로 자동 발송합니다. 사이드바의
+              '월간 리포트' 화면에서도 즉시 발송할 수 있어요.
+            </p>
+
+            <div className="flex items-center justify-between pt-5">
+              <div>
+                <p className="text-sm font-medium text-slate-800">월간 리포트 자동 발송</p>
+                <p className="text-xs text-slate-400">매월 {sendDay}일 {sendTime} 자동 발송됩니다</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setAutoSend((v) => !v)}
+                className={
+                  "relative h-6 w-11 rounded-full transition-colors " +
+                  (autoSend ? "bg-indigo-500" : "bg-slate-200")
+                }
+              >
+                <span
+                  className={
+                    "absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform " +
+                    (autoSend ? "translate-x-5" : "translate-x-0")
+                  }
+                />
+              </button>
+            </div>
 
-              {/* Monthly report email settings */}
-              <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
-                <p className="text-sm font-bold text-slate-900">월간 리포트 이메일</p>
-                <p className="pt-1 text-xs leading-relaxed text-slate-400">
-                  매월 지정한 날짜와 시간에 월간 리포트 요약을 아래 수신 이메일로 자동 발송합니다. 사이드바의
-                  '월간 리포트' 화면에서도 즉시 발송할 수 있어요.
-                </p>
-
-                <div className="flex items-center justify-between pt-5">
+            {autoSend && (
+              <>
+                <div className="grid grid-cols-2 gap-4 pt-5">
                   <div>
-                    <p className="text-sm font-medium text-slate-800">월간 리포트 자동 발송</p>
-                    <p className="text-xs text-slate-400">매월 {sendDay}일 {sendTime} 자동 발송됩니다</p>
+                    <p className="pb-1.5 text-xs font-semibold text-slate-500">발송 일자</p>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min={1}
+                        max={28}
+                        value={sendDay}
+                        onChange={(e) => setSendDay(Number(e.target.value))}
+                        className="w-16 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs text-slate-400">일</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="pb-1.5 text-xs font-semibold text-slate-500">발송 시간</p>
+                    <input
+                      type="time"
+                      value={sendTime}
+                      onChange={(e) => setSendTime(e.target.value)}
+                      className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-5">
+                  <p className="pb-2 text-xs font-semibold text-slate-500">부서 / 이메일</p>
+                  <div className="flex flex-col gap-2">
+                    {recipients.map((r, i) => (
+                      <div key={r.id} className="flex items-center gap-2">
+                        <input
+                          value={r.department}
+                          onChange={(e) => updateRecipient(r.id, "department", e.target.value)}
+                          placeholder="부서명"
+                          className="w-[120px] rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <input
+                          value={r.email}
+                          onChange={(e) => updateRecipient(r.id, "email", e.target.value)}
+                          placeholder="email@example.com"
+                          className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        />
+                        {recipients.length > 1 && (
+                          <button
+                            onClick={() => removeRecipient(r.id)}
+                            className="text-slate-300 hover:text-red-500"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                   <button
-                    onClick={() => setAutoSend((v) => !v)}
-                    className={
-                      "relative h-6 w-11 rounded-full transition-colors " +
-                      (autoSend ? "bg-indigo-500" : "bg-slate-200")
-                    }
+                    onClick={addRecipient}
+                    className="mt-2 flex items-center gap-1 text-xs font-bold text-indigo-500 hover:underline"
                   >
-                    <span
-                      className={
-                        "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform " +
-                        (autoSend ? "translate-x-5" : "translate-x-0.5")
-                      }
-                    />
+                    <Plus className="h-3 w-3" />
+                    수신자 추가
                   </button>
                 </div>
 
-                {autoSend && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4 pt-5">
-                      <div>
-                        <p className="pb-1.5 text-xs font-semibold text-slate-500">발송 일자</p>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={1}
-                            max={28}
-                            value={sendDay}
-                            onChange={(e) => setSendDay(Number(e.target.value))}
-                            className="w-16 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                          <span className="text-xs text-slate-400">일</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="pb-1.5 text-xs font-semibold text-slate-500">발송 시간</p>
-                        <input
-                          type="time"
-                          value={sendTime}
-                          onChange={(e) => setSendTime(e.target.value)}
-                          className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-5">
-                      <p className="pb-2 text-xs font-semibold text-slate-500">부서 / 이메일</p>
-                      <div className="flex flex-col gap-2">
-                        {recipients.map((r, i) => (
-                          <div key={r.id} className="flex items-center gap-2">
-                            <input
-                              value={r.department}
-                              onChange={(e) => updateRecipient(r.id, "department", e.target.value)}
-                              placeholder="부서명"
-                              className="w-[120px] rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                            <input
-                              value={r.email}
-                              onChange={(e) => updateRecipient(r.id, "email", e.target.value)}
-                              placeholder="email@example.com"
-                              className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
-                            {recipients.length > 1 && (
-                              <button
-                                onClick={() => removeRecipient(r.id)}
-                                className="text-slate-300 hover:text-red-500"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        onClick={addRecipient}
-                        className="mt-2 flex items-center gap-1 text-xs font-bold text-indigo-500 hover:underline"
-                      >
-                        <Plus className="h-3 w-3" />
-                        수신자 추가
-                      </button>
-                    </div>
-
-                    <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
-                      <p className="pb-2 text-xs font-bold text-slate-500">이메일 미리보기</p>
-                      <p className="text-[11px] text-slate-400">
-                        제목: [SELLoN] 2026년 7월 월간 리포트
-                      </p>
-                      <p className="pt-0.5 text-[11px] text-slate-400">
-                        받는 사람: {previewRecipient || "수신자를 추가해주세요"}
-                      </p>
-                      <p className="pt-3 text-[12px] leading-relaxed text-slate-500">
-                        안녕하세요. SELLoN 셀러 리포트 시스템에서 자동 발송된 메일입니다. 2026년 7월의 월간
-                        리포트가 준비되었습니다. 판매 채널별 매출 요약, CS 이상 탐지 현황, 주요 지표 변동
-                        내역이 포함되어 있으며, 첨부된 PDF 파일에서 전체 리포트를 확인하실 수 있습니다.
-                        <br />
-                        <br />
-                        감사합니다. SELLoN 리포트팀
-                      </p>
-                      <p className="pt-3 text-[10px] text-slate-300">
-                        이 메일은 자동 발송 시스템에서 전송되었습니다. 수신 거부를 원하시면 설정에서 자동
-                        발송을 해제해 주세요.
-                      </p>
-                    </div>
-                  </>
-                )}
-
-                <div className="flex justify-end gap-2 pt-5">
-                  <button
-                    onClick={handleCancelEdit}
-                    className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-600"
-                  >
-                    저장
-                  </button>
+                <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                  <p className="pb-2 text-xs font-bold text-slate-500">이메일 미리보기</p>
+                  <p className="text-[11px] text-slate-400">
+                    제목: [SELLoN] 2026년 7월 월간 리포트
+                  </p>
+                  <p className="pt-0.5 text-[11px] text-slate-400">
+                    받는 사람: {previewRecipient || "수신자를 추가해주세요"}
+                  </p>
+                  <p className="pt-3 text-[12px] leading-relaxed text-slate-500">
+                    안녕하세요. SELLoN 셀러 리포트 시스템에서 자동 발송된 메일입니다. 2026년 7월의 월간
+                    리포트가 준비되었습니다. 판매 채널별 매출 요약, CS 이상 탐지 현황, 주요 지표 변동
+                    내역이 포함되어 있으며, 첨부된 PDF 파일에서 전체 리포트를 확인하실 수 있습니다.
+                    <br />
+                    <br />
+                    감사합니다. SELLoN 리포트팀
+                  </p>
+                  <p className="pt-3 text-[10px] text-slate-300">
+                    이 메일은 자동 발송 시스템에서 전송되었습니다. 수신 거부를 원하시면 설정에서 자동
+                    발송을 해제해 주세요.
+                  </p>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+
+            <div className="flex justify-end gap-2 pt-5">
+              <button
+                onClick={handleCancelEdit}
+                className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                className="rounded-lg bg-indigo-500 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-600"
+              >
+                저장
+              </button>
+            </div>
+          </div>
 
           {/* Bottom links */}
           <div className="flex items-center justify-center gap-6 pt-2">

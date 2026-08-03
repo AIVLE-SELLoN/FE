@@ -7,14 +7,9 @@ import NotificationBell from "@/components/common/NotificationBell";
 
 // ── 목데이터 — 실제로는 대시보드 요약 API에서 받아와야 해요 ──────────────
 
-// 미해결 이상 이벤트 배너용 집계. total을 0으로 바꾸면(=모두 해결) 배너가 자동으로 사라져요.
+// 미확인 이상 이벤트 배너용 집계. total을 0으로 바꾸면(=모두 확인) 배너가 자동으로 사라져요.
 const unresolvedSummary = {
   total: 7,
-  byChannel: [
-    { name: "네이버", count: 2 },
-    { name: "쿠팡", count: 4 },
-    { name: "지그재그", count: 1 },
-  ],
 };
 
 const channelSummary = [
@@ -103,7 +98,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-5 px-5">
-            {/* Unresolved events banner — 미해결 건수가 0이면 자동으로 숨겨져요 */}
+            {/* Unconfirmed events banner — 미확인 건수가 0이면 자동으로 숨겨져요 */}
             {unresolvedSummary.total > 0 && (
               <div className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-indigo-500/10 bg-indigo-50 p-6 shadow-[0_1px_3px_-1px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.1)] sm:flex-row sm:items-center">
                 <div className="flex items-center gap-6">
@@ -112,21 +107,11 @@ export default function DashboardPage() {
                   </span>
                   <div className="flex flex-col gap-2">
                     <p className="text-xl font-bold text-indigo-500">
-                      미해결 이상 이벤트{" "}
+                      미확인 이상 이벤트{" "}
                       <Link href="/alert" className="underline">
                         {unresolvedSummary.total}건
                       </Link>
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {unresolvedSummary.byChannel.map((c) => (
-                        <span
-                          key={c.name}
-                          className="rounded-full border border-indigo-500/20 bg-white/60 px-3 py-1 text-xs font-bold text-indigo-500"
-                        >
-                          {c.name} {c.count}건
-                        </span>
-                      ))}
-                    </div>
                   </div>
                 </div>
                 <Link

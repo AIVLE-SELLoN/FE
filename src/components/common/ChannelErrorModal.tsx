@@ -8,12 +8,14 @@ export default function ChannelErrorModal({
   description,
   onRetry,
   onClose,
+  onContact,
 }: {
   open: boolean;
   reason: string;
   description: string;
   onRetry: () => void;
   onClose: () => void;
+  onContact?: () => void;
 }) {
   if (!open) return null;
 
@@ -48,6 +50,7 @@ export default function ChannelErrorModal({
           <div className="flex w-full items-center justify-between pt-10">
             <button
               type="button"
+              onClick={onContact}
               className="px-3.5 py-1.5 text-sm font-bold text-slate-400 hover:text-slate-600"
             >
               문의하기

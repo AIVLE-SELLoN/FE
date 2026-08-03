@@ -17,7 +17,7 @@ import {
 } from "recharts";
 
 const CHANNEL_COLORS = {
-  coupang: "#F08A24",
+  coupang: "#D9720B",
   naver: "#1F9254",
   zigzag: "#9A9AA5",
 };
@@ -194,9 +194,10 @@ export default function ChannelComparisonPage() {
           <div className="flex flex-col gap-6 px-5">
             {/* KPI summary */}
             <SectionCard title="채널별 핵심 지표 요약" subtitle="최근 30일 기준">
-              <div className="flex gap-4 pb-4 text-sm font-bold text-[#3A3A44]">
+              <div className="grid grid-cols-[180px_repeat(3,1fr)] gap-4 pb-4 text-sm font-bold text-[#3A3A44]">
+                <span />
                 {(["coupang", "naver", "zigzag"] as const).map((k) => (
-                  <span key={k} className="ml-4 flex items-center gap-2 first:ml-0">
+                  <span key={k} className="flex items-center gap-2">
                     <span
                       className="h-2 w-2 rounded-full"
                       style={{ backgroundColor: CHANNEL_COLORS[k] }}
@@ -207,23 +208,24 @@ export default function ChannelComparisonPage() {
               </div>
               <div>
                 {KPI_ROWS.map((row) => (
-                  <div key={row.label} className="border-b border-[#F0F0F3] py-4 last:border-b-0">
+                  <div
+                    key={row.label}
+                    className="grid grid-cols-[180px_repeat(3,1fr)] items-center gap-4 border-b border-[#F0F0F3] py-4 last:border-b-0"
+                  >
                     <p className="text-[18px] font-medium text-[#52525B]">{row.label}</p>
-                    <div className="flex gap-16 pt-2 pl-4">
-                      {row.values.map((val, i) => (
-                        <div key={i}>
-                          <p
-                            className="text-xl font-bold"
-                            style={{
-                              color: [CHANNEL_COLORS.coupang, CHANNEL_COLORS.naver, CHANNEL_COLORS.zigzag][i],
-                            }}
-                          >
-                            {val.v}
-                          </p>
-                          <p className="text-xs text-[#A5A5AF]">{val.note}</p>
-                        </div>
-                      ))}
-                    </div>
+                    {row.values.map((val, i) => (
+                      <div key={i}>
+                        <p
+                          className="text-xl font-bold"
+                          style={{
+                            color: [CHANNEL_COLORS.coupang, CHANNEL_COLORS.naver, CHANNEL_COLORS.zigzag][i],
+                          }}
+                        >
+                          {val.v}
+                        </p>
+                        <p className="text-xs text-[#A5A5AF]">{val.note}</p>
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
@@ -307,7 +309,12 @@ export default function ChannelComparisonPage() {
                     <CartesianGrid stroke="#F0F0F3" vertical={false} />
                     <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#A5A5AF" }} axisLine={{ stroke: "#F0F0F3" }} tickLine={false} />
                     <YAxis tick={{ fontSize: 12, fill: "#A5A5AF" }} axisLine={false} tickLine={false} />
-                    <Tooltip />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        `${value}건`,
+                        name === "coupang" ? "쿠팡" : name === "naver" ? "네이버" : "지그재그",
+                      ]}
+                    />
                     <Legend
                       formatter={(value: string) =>
                         value === "coupang" ? "쿠팡" : value === "naver" ? "네이버" : "지그재그"
@@ -315,10 +322,13 @@ export default function ChannelComparisonPage() {
                     />
                     <Line type="monotone" dataKey="coupang" stroke={CHANNEL_COLORS.coupang} strokeWidth={2.5} dot={{ r: 4 }} />
                     <Line type="monotone" dataKey="naver" stroke={CHANNEL_COLORS.naver} strokeWidth={2.5} dot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="zigzag" stroke={CHANNEL_COLORS.zigzag} strokeWidth={2.5} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="zigzag" stroke={CHANNEL_COLORS.zigzag} strokeWidth={2.5} strokeDasharray="6 4" dot={{ r: 4 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
+              <p className="pt-3 text-[12px] leading-relaxed text-[#7A7A85]">
+                지그재그는 표본 데이터가 부족해 점선으로 표시돼요. 데이터가 누적되면 실선으로 전환됩니다.
+              </p>
             </SectionCard>
 
             {/* Sentiment + Radar */}
