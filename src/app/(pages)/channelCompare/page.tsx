@@ -1,6 +1,7 @@
 "use client";
 
 import NotificationBell from "@/components/common/NotificationBell";
+import { CHANNEL_COLORS, CHANNEL_INITIALS, CHANNEL_LABELS, CHANNEL_TINTS } from "@/lib/channelColors";
 import {
   LineChart,
   Line,
@@ -15,12 +16,6 @@ import {
   Radar,
   Legend,
 } from "recharts";
-
-const CHANNEL_COLORS = {
-  coupang: "#D9720B",
-  naver: "#1F9254",
-  zigzag: "#9A9AA5",
-};
 
 // KPI 요약 — 각 지표별 3채널 값 + 코멘트
 const KPI_ROWS = [
@@ -61,11 +56,11 @@ const KPI_ROWS = [
 // 채널별 문의 유형 상위 3개 (쿠팡/네이버는 데이터 있음, 지그재그는 30일 기준 데이터 부족)
 const ASPECT_DATA = {
   coupang: {
-    label: "쿠팡",
-    initial: "C",
+    label: CHANNEL_LABELS.coupang,
+    initial: CHANNEL_INITIALS.coupang,
     color: CHANNEL_COLORS.coupang,
-    iconBg: "#FFD8C2",
-    iconText: "#C24A0F",
+    iconBg: CHANNEL_TINTS.coupang.bg,
+    iconText: CHANNEL_TINTS.coupang.fg,
     items: [
       { name: "배송 문의", pct: 62 },
       { name: "반품/교환 문의", pct: 21 },
@@ -74,11 +69,11 @@ const ASPECT_DATA = {
     footnote: "쿠팡 채널에 배송 문의가 집중되어 있어요 · 편중형 패턴 (채널 특성 요인 가능성)",
   },
   naver: {
-    label: "네이버",
-    initial: "N",
+    label: CHANNEL_LABELS.naver,
+    initial: CHANNEL_INITIALS.naver,
     color: CHANNEL_COLORS.naver,
-    iconBg: "#D6F5D6",
-    iconText: "#1F9254",
+    iconBg: CHANNEL_TINTS.naver.bg,
+    iconText: CHANNEL_TINTS.naver.fg,
     items: [
       { name: "색상 문의", pct: 41 },
       { name: "배송 문의", pct: 28 },
@@ -87,11 +82,11 @@ const ASPECT_DATA = {
     footnote: "상대적으로 고른 분포 · 특정 유형에 쏠리지 않는 편이에요",
   },
   zigzag: {
-    label: "지그재그",
-    initial: "Z",
+    label: CHANNEL_LABELS.zigzag,
+    initial: CHANNEL_INITIALS.zigzag,
     color: CHANNEL_COLORS.zigzag,
-    iconBg: "#ECECF0",
-    iconText: "#9A9AA5",
+    iconBg: CHANNEL_TINTS.zigzag.bg,
+    iconText: CHANNEL_TINTS.zigzag.fg,
     items: [],
     footnote: null,
   },
@@ -109,9 +104,9 @@ const MONTHLY_TREND = [
 
 // 감성 분석 — 긍정/중립/부정 비율
 const SENTIMENT_DATA = [
-  { key: "coupang", label: "쿠팡", color: CHANNEL_COLORS.coupang, positive: 38, neutral: 35, negative: 27 },
-  { key: "naver", label: "네이버", color: CHANNEL_COLORS.naver, positive: 55, neutral: 30, negative: 15 },
-  { key: "zigzag", label: "지그재그", color: CHANNEL_COLORS.zigzag, positive: 42, neutral: 45, negative: 13 },
+  { key: "coupang", label: CHANNEL_LABELS.coupang, color: CHANNEL_COLORS.coupang, positive: 38, neutral: 35, negative: 27 },
+  { key: "naver", label: CHANNEL_LABELS.naver, color: CHANNEL_COLORS.naver, positive: 55, neutral: 30, negative: 15 },
+  { key: "zigzag", label: CHANNEL_LABELS.zigzag, color: CHANNEL_COLORS.zigzag, positive: 42, neutral: 45, negative: 13 },
 ];
 
 // 문의 유형 레이더 — 원본 SVG 폴리곤 좌표에서 정확한 수치를 복원할 수 없어 유사도 기준으로
@@ -129,7 +124,7 @@ const RADAR_DATA = [
 const INSIGHTS = [
   {
     key: "coupang",
-    label: "쿠팡",
+    label: CHANNEL_LABELS.coupang,
     color: CHANNEL_COLORS.coupang,
     points: [
       "배송 문의가 전체의 62%로 집중 — 편중형 패턴",
@@ -139,7 +134,7 @@ const INSIGHTS = [
   },
   {
     key: "naver",
-    label: "네이버",
+    label: CHANNEL_LABELS.naver,
     color: CHANNEL_COLORS.naver,
     points: [
       "색상·품질 문의 비중 높음 — 상품 정보 보완 효과적",
@@ -149,7 +144,7 @@ const INSIGHTS = [
   },
   {
     key: "zigzag",
-    label: "지그재그",
+    label: CHANNEL_LABELS.zigzag,
     color: CHANNEL_COLORS.zigzag,
     points: [
       "데이터 30일 기준 미충족 — 패턴 분석 유보",
@@ -163,16 +158,19 @@ function SectionCard({
   title,
   subtitle,
   children,
+  contentClassName = "pt-6",
 }: {
   title: string;
   subtitle: string;
   children: React.ReactNode;
+  /** 제목과 본문 사이 간격. 차트처럼 자체 여백을 가진 내용은 줄여서 넘기면 돼요 */
+  contentClassName?: string;
 }) {
   return (
     <div className="rounded-2xl border border-[#EDEDED] bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
       <h2 className="text-xl font-bold text-[#17171C]">{title}</h2>
       <p className="pt-1 text-[12px] text-[#A5A5AF]">{subtitle}</p>
-      <div className="pt-6">{children}</div>
+      <div className={contentClassName}>{children}</div>
     </div>
   );
 }
@@ -358,16 +356,20 @@ export default function ChannelComparisonPage() {
                 </div>
               </SectionCard>
 
-              <SectionCard title="문의 유형 레이더" subtitle="채널간 유형 분포 전체 비교">
+              <SectionCard
+                title="문의 유형 레이더"
+                subtitle="채널간 유형 분포 전체 비교"
+                contentClassName="pt-1"
+              >
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={RADAR_DATA}>
+                    <RadarChart data={RADAR_DATA} outerRadius="75%">
                       <PolarGrid stroke="#F0F0F3" />
                       <PolarAngleAxis dataKey="type" tick={{ fontSize: 11, fill: "#7A7A85" }} />
                       <Radar name="쿠팡" dataKey="쿠팡" stroke={CHANNEL_COLORS.coupang} fill={CHANNEL_COLORS.coupang} fillOpacity={0.15} />
                       <Radar name="네이버" dataKey="네이버" stroke={CHANNEL_COLORS.naver} fill={CHANNEL_COLORS.naver} fillOpacity={0.15} />
                       <Radar name="지그재그" dataKey="지그재그" stroke={CHANNEL_COLORS.zigzag} fill={CHANNEL_COLORS.zigzag} fillOpacity={0.1} />
-                      <Legend />
+                      <Legend iconType="square" iconSize={10} wrapperStyle={{ paddingTop: 48 }} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
