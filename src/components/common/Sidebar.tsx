@@ -19,6 +19,7 @@ import {
   ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
+import { useAuth } from '@/lib/auth/AuthContext';
 
 function basePath(href: string) {
   return href.split('?')[0];
@@ -191,6 +192,7 @@ export default function Sidebar() {
   const searchParams = useSearchParams();
   const qs = searchParams.toString();
   const currentFullPath = qs ? `${pathname}?${qs}` : pathname;
+  const { user } = useAuth();
 
   return (
     <aside className="sticky top-0 flex h-screen w-[260px] shrink-0 flex-col border-r border-slate-200 bg-white">
@@ -253,11 +255,13 @@ export default function Sidebar() {
       <div className="border-t border-slate-100 p-4">
         <div className="flex items-center gap-3 p-2">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-indigo-50 text-sm font-bold text-indigo-500">
-            유
+            {user?.name?.[0] ?? '?'}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-slate-800">김유진 매니저</p>
-            <p className="truncate text-xs text-slate-500">Premium Plan</p>
+            <p className="truncate text-sm font-bold text-slate-800">{user?.name ?? '로그인이 필요해요'}</p>
+            <p className="truncate text-xs text-slate-500">
+              {user?.role === 'ADMIN' ? '관리자 계정' : 'Premium Plan'}
+            </p>
           </div>
         </div>
       </div>

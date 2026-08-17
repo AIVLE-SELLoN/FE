@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Upload, X, Mail, Plus, Trash2, LogOut, AlertTriangle, CheckCircle2 } from "lucide-react";
 import NotificationBell from "@/components/common/NotificationBell";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 type Recipient = { id: string; department: string; email: string };
 
@@ -17,6 +18,7 @@ const WITHDRAW_REASONS = [
 
 export default function MyPage() {
   const router = useRouter();
+  const { logout } = useAuth();
   const [editing, setEditing] = useState(false);
   const [brandName, setBrandName] = useState("마르디 메크르디");
   const [brandNameDraft, setBrandNameDraft] = useState(brandName);
@@ -349,7 +351,13 @@ export default function MyPage() {
 
           {/* Bottom links */}
           <div className="flex items-center justify-center gap-6 pt-2">
-            <button className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600">
+            <button
+              onClick={() => {
+                logout();
+                router.push("/login");
+              }}
+              className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600"
+            >
               <LogOut className="h-3.5 w-3.5" />
               로그아웃
             </button>

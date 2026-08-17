@@ -1,12 +1,21 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
-// TODO: 실제 인증 상태 필드로 채우기
 interface AuthState {
-  isLoggedIn: boolean;
-  setLoggedIn: (value: boolean) => void;
+  accessToken: string | null;
+  refreshToken: string | null;
+  setTokens: (accessToken: string, refreshToken: string) => void;
+  clearTokens: () => void;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
-  isLoggedIn: false,
-  setLoggedIn: (value) => set({ isLoggedIn: value }),
-}));
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+      refreshToken: null,
+      setTokens: (accessToken, refreshToken) => set({ accessToken, refreshToken }),
+      clearTokens: () => set({ accessToken: null, refreshToken: null }),
+    }),
+    { name: 'auth-storage' } // localStorage에 저장될 때 쓰는 키 이름
+  )
+);

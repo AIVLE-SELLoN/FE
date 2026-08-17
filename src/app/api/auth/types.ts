@@ -4,3 +4,13 @@ import { z } from 'zod';
 export const authResponseSchema = z.object({});
 
 export type AuthResponse = z.infer<typeof authResponseSchema>;
+
+export const loginResponseSchema = z.object({
+  userId: z.number(),
+  email: z.string(),
+  name: z.string(),
+  role: z.enum(['ROOT', 'MEMBER', 'ADMIN']),
+  companyKey: z.string().nullable(),
+});
+
+export type LoginResponse = z.infer<typeof loginResponseSchema>;

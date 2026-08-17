@@ -1,8 +1,20 @@
 import { api } from '../client';
-import { authResponseSchema, type AuthResponse } from './types';
+import { loginResponseSchema, type LoginResponse } from './types';
+import { useAuthStore } from '@/store/useAuthStore';
 
-// TODO: 실제 엔드포인트로 교체 (Notion API 명세서 참고)
-export async function getAuth(): Promise<AuthResponse> {
-  const res = await api.get<unknown>('/auth');
-  return authResponseSchema.parse(res);
+interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export async function postLogin(req: LoginRequest): Promise<LoginResponse> {
+  const { data, headers } = await api.postRaw<unknown>('/api/v1/sellon/auth/login', req);
+
+  const accessToken = headers.get('Authorization');
+  const refreshToken = headers.get('Refresh-Token');
+  if (accessToken && refreshToken) {
+    useAuthStore.getState().setTokens(accessToken, refreshToken);
+  }
+
+  return loginResponseSchema.parse(data);
 }

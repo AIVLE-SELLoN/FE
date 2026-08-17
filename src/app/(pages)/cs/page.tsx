@@ -18,6 +18,7 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
+import { getDeletedIds, markDeleted, getEditedInquiries, saveEdit, type InquiryEdit } from "@/lib/inquiryStore";
 
 
 
@@ -88,7 +89,7 @@ const inquiryDetails: Record<string, InquiryDetail> = {
 const fallbackDetail: InquiryDetail = {
   title: "문의 내역",
   status: "처리중",
-  type: "일반 문의",
+  type: "기타",
   date: "2026.03.01",
   author: "-",
   content: "문의 상세 내용을 불러오는 중이에요.",
@@ -161,6 +162,42 @@ const faqItems: FaqItem[] = [
     question: "제안된 개선안의 근거를 확인할 수 있나요?",
     answer: "네, 각 개선안에는 근거가 된 CS 데이터·상세페이지 수정 이력·과거 유사 사례가 인용 형태로 함께 제공돼요.",
   },
+  {
+    id: 8,
+    category: "채널 연결",
+    question: "여러 채널을 동시에 연동할 수 있나요?",
+    answer: "네, 쿠팡·네이버·지그재그를 동시에 연동하실 수 있어요. 채널별로 개별 API 키를 입력하시면 각 채널의 데이터가 독립적으로 수집되고, 대시보드에서 한 화면에 모아 확인하실 수 있어요.",
+  },
+  {
+    id: 9,
+    category: "채널 연결",
+    question: "채널 연동 후 데이터는 언제부터 보이나요?",
+    answer: "연동이 완료되면 바로 데이터 수집이 시작돼요. 다만 이상탐지·비교분석 같은 분석 결과는 일정 기간의 데이터가 쌓여야 정확도가 올라가기 때문에, 연동 직후보다는 며칠 지난 뒤부터 더 유의미한 인사이트를 보실 수 있어요.",
+  },
+  {
+    id: 10,
+    category: "상품 매핑",
+    question: "자동 매핑이 잘못된 것 같으면 수정할 수 있나요?",
+    answer: "네, 상품 매핑 관리 페이지에서 자동 매칭된 그룹을 직접 확인하고 언제든 연결을 해제하거나 다른 상품으로 다시 연결하실 수 있어요.",
+  },
+  {
+    id: 11,
+    category: "이상탐지",
+    question: "이상 알림은 얼마나 자주 오나요?",
+    answer: "이상탐지는 하루 한 번 전체 상품을 대상으로 실행돼요. 동일한 상품·유형·채널 조합의 알림은 한 번 뜨면 7일 동안은 반복해서 오지 않고, 해당 알림을 처리(승인/반려)하시면 그때부터 다시 감지가 시작돼요.",
+  },
+  {
+    id: 12,
+    category: "개선안",
+    question: "개선안을 반영하면 상품 설명이 자동으로 바뀌나요?",
+    answer: "아니요, 자동으로 반영되지는 않아요. 제안된 개선안을 참고해서 상품 설명을 직접 수정하신 뒤 저장하시면 그 변경 내역이 개선안 히스토리에 남아요.",
+  },
+  {
+    id: 13,
+    category: "개선안",
+    question: "개선안을 반려하면 어떻게 되나요?",
+    answer: "반려하시면 반려 사유가 저장되고, 원하실 경우 그 사유를 바탕으로 분석을 다시 요청하실 수 있어요. 반려 이력은 이후 개선안을 생성할 때 참고 자료로 함께 활용돼요.",
+  },
 ];
 
 const CATEGORIES: ("전체" | FaqCategory)[] = ["전체", "채널 연결", "상품 매핑", "이상탐지", "개선안"];
@@ -178,15 +215,47 @@ function CsPageContent() {
   }, [searchParams]);
 
   const [selectedInquiryId, setSelectedInquiryId] = useState<string | null>(null);
+  const [editingInquiryId, setEditingInquiryId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [editedInquiries, setEditedInquiries] = useState<Record<string, InquiryEdit>>({});
+
+  // 페이지가 열릴 때 저장된 삭제/수정 내역을 불러와요.
+  useEffect(() => {
+    setDeletedIds(getDeletedIds());
+    setEditedInquiries(getEditedInquiries());
+  }, []);
 
   const [inquiryQuery, setInquiryQuery] = useState("");
 
-  const filteredInquiries = useMemo(
-    () => inquiries.filter((i) => i.title.toLowerCase().includes(inquiryQuery.toLowerCase())),
-    [inquiryQuery],
+  // 목록: 삭제된 건 제외하고, 수정된 건 최신 제목/유형으로 덮어써서 보여줘요.
+  const visibleInquiries = useMemo(
+    () =>
+      inquiries
+        .filter((i) => !deletedIds.has(i.id))
+        .map((i) => {
+          const edit = editedInquiries[i.id];
+          const isValidCategory = (v: string): v is Category =>
+            Object.prototype.hasOwnProperty.call(INQUIRY_CATEGORY_STYLE, v);
+          return edit
+            ? { ...i, title: edit.title, category: isValidCategory(edit.type) ? edit.type : i.category }
+            : i;
+        }),
+    [deletedIds, editedInquiries],
   );
 
-  const detail = inquiryDetails[selectedInquiryId ?? ""] ?? fallbackDetail;
+  const filteredInquiries = useMemo(
+    () => visibleInquiries.filter((i) => i.title.toLowerCase().includes(inquiryQuery.toLowerCase())),
+    [visibleInquiries, inquiryQuery],
+  );
+
+  // 상세: 수정된 내용이 있으면 base 데이터 위에 덮어써서 보여줘요.
+  const baseDetail = inquiryDetails[selectedInquiryId ?? ""] ?? fallbackDetail;
+  const detailEdit = selectedInquiryId ? editedInquiries[selectedInquiryId] : undefined;
+  const detail = detailEdit
+    ? { ...baseDetail, title: detailEdit.title, type: detailEdit.type, content: detailEdit.content, author: detailEdit.name }
+    : baseDetail;
 
   const router = useRouter();
   const pathname = usePathname();
@@ -200,6 +269,24 @@ function CsPageContent() {
   const goToInquiryList = () => {
     setTab("list");
     router.push(`${pathname}?view=inquiry`, { scroll: false });
+  };
+  const goToEditInquiry = (id: string) => {
+    const existingEdit = editedInquiries[id];
+    const d = inquiryDetails[id] ?? fallbackDetail;
+    setEditingInquiryId(id);
+    setName(existingEdit?.name ?? d.author);
+    setType(existingEdit?.type ?? d.type);
+    setTitle(existingEdit?.title ?? d.title);
+    setContent(existingEdit?.content ?? d.content);
+    setError("");
+    setTab("new");
+  };
+  const handleDeleteInquiry = (id: string) => {
+    // TODO: 백엔드 문의 삭제 API 붙으면 이 부분을 실제 fetch(DELETE) 호출로 교체
+    markDeleted(id);
+    setDeletedIds((prev) => new Set(prev).add(id));
+    setDeleteConfirmId(null);
+    goToInquiryList();
   };
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -219,7 +306,13 @@ function CsPageContent() {
       return;
     }
     setError("");
-    // TODO: 백엔드 문의 접수 API 붙으면 이 부분을 실제 fetch 호출로 교체
+    if (editingInquiryId) {
+      // TODO: 실제로는 PATCH /inquiries/{id} 호출 — 지금은 localStorage에 저장하는 걸로 흉내만 냄
+      const edit: InquiryEdit = { name, type, title, content };
+      saveEdit(editingInquiryId, edit);
+      setEditedInquiries((prev) => ({ ...prev, [editingInquiryId]: edit }));
+    }
+    // TODO: 신규 문의라면 실제로는 POST /inquiries 호출로 교체
     setSubmitted(true);
   };
 
@@ -237,11 +330,17 @@ function CsPageContent() {
       <div className="flex min-h-screen bg-white">
         <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-[#F8F8FC]">
           <CheckCircle2 className="h-14 w-14 text-emerald-500" />
-          <p className="text-xl font-bold text-slate-900">문의가 접수되었습니다</p>
+          <p className="text-xl font-bold text-slate-900">
+            {editingInquiryId ? "문의가 수정되었습니다" : "문의가 접수되었습니다"}
+          </p>
           <p className="text-sm text-slate-500">담당자 확인 후 답변드릴게요.</p>
           <div className="mt-4 flex gap-3">
             <button
-              onClick={goToInquiryList}
+              onClick={() => {
+                setSubmitted(false);
+                setEditingInquiryId(null);
+                goToInquiryList();
+              }}
               className="rounded-xl bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600"
             >
               문의 내역 보기
@@ -331,7 +430,7 @@ function CsPageContent() {
                     <p className="px-6 py-10 text-center text-sm text-slate-400">검색 결과가 없습니다.</p>
                   )}
                   {filteredInquiries.map((i) => {
-                    const cat = INQUIRY_CATEGORY_STYLE[i.category];
+                    const cat = INQUIRY_CATEGORY_STYLE[i.category] ?? INQUIRY_CATEGORY_STYLE["기타"];
                     return (
                       <button
                         key={i.id}
@@ -491,6 +590,22 @@ function CsPageContent() {
             >
               목록으로
             </button>
+            {!detail.answer && selectedInquiryId && (
+              <>
+                <button
+                  onClick={() => goToEditInquiry(selectedInquiryId)}
+                  className="rounded-xl border border-slate-200 px-8 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                >
+                  수정
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmId(selectedInquiryId)}
+                  className="rounded-xl border border-red-200 px-8 py-3 text-sm font-medium text-red-500 hover:bg-red-50"
+                >
+                  삭제
+                </button>
+              </>
+            )}
             <button
               onClick={() => setTab("new")}
               className="rounded-xl bg-indigo-500 px-8 py-3 text-sm font-medium text-white shadow-[0_10px_15px_-3px_rgba(99,68,212,0.2)] hover:bg-indigo-600"
@@ -498,14 +613,48 @@ function CsPageContent() {
               추가 문의하기
             </button>
           </div>
+
+          {deleteConfirmId && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+              onClick={() => setDeleteConfirmId(null)}
+            >
+              <div
+                className="w-full max-w-sm rounded-2xl bg-white p-7 shadow-xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-base font-bold text-slate-900">문의를 삭제할까요?</p>
+                <p className="pt-2 text-sm text-slate-500">삭제한 문의는 다시 볼 수 없어요.</p>
+                <div className="flex justify-end gap-2 pt-6">
+                  <button
+                    onClick={() => setDeleteConfirmId(null)}
+                    className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-100"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={() => handleDeleteInquiry(deleteConfirmId)}
+                    className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-600"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
         )}
         {tab === "new" && (
           <main className="flex flex-col gap-8 p-7">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-slate-900">1:1 문의하기</h1>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {editingInquiryId ? "문의 수정하기" : "1:1 문의하기"}
+            </h1>
             <button
-              onClick={goToInquiryList}
+              onClick={() => {
+                setEditingInquiryId(null);
+                goToInquiryList();
+              }}
               className="flex items-center gap-2 rounded-lg bg-indigo-500 px-5 py-2.5 text-sm font-bold text-white hover:bg-indigo-600"
             >
               문의 내역 보기
@@ -518,9 +667,13 @@ function CsPageContent() {
               className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]"
             >
               <div className="border-b border-slate-100 p-8">
-                <h2 className="text-[22px] font-bold text-slate-900">새 문의 작성</h2>
+                <h2 className="text-[22px] font-bold text-slate-900">
+                  {editingInquiryId ? "문의 내용 수정" : "새 문의 작성"}
+                </h2>
                 <p className="pt-1 text-[13px] text-slate-500">
-                  궁금하신 점이나 불편한 사항을 남겨주시면 담당자가 확인 후 답변해 드립니다.
+                  {editingInquiryId
+                    ? "아직 답변 전인 문의만 수정할 수 있어요."
+                    : "궁금하신 점이나 불편한 사항을 남겨주시면 담당자가 확인 후 답변해 드립니다."}
                 </p>
               </div>
 
@@ -646,7 +799,7 @@ function CsPageContent() {
                   type="submit"
                   className="rounded-xl bg-indigo-500 px-10 py-3 text-sm font-bold text-white shadow-[0_10px_15px_-3px_rgba(97,94,255,0.2)] hover:bg-indigo-600"
                 >
-                  문의 접수하기
+                  {editingInquiryId ? "수정 완료" : "문의 접수하기"}
                 </button>
               </div>
             </form>

@@ -4,15 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { postLogin } from "@/app/api/auth";
 
 const footerLinks = ["서비스 이용약관", "개인정보처리방침", "고객센터"];
 
-// 데모용 — 실제로는 백엔드 로그인 API 응답으로 성공/실패를 판단해야 해요.
-const DEMO_EMAIL = "demo@sellon.co.kr";
-const DEMO_PASSWORD = "sellon1234!";
-
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loginType, setLoginType] = useState<"user" | "root">("user");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberId, setRememberId] = useState(false);
@@ -21,21 +20,20 @@ export default function LoginPage() {
   const [loginError, setLoginError] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: 백엔드 로그인 API 붙으면 이 부분을 실제 fetch 호출로 교체하고,
-    // 응답 상태에 따라 setLoginError / 로딩 화면 표시 여부를 결정하면 돼요.
-    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      setLoginError(false);
-      setIsLoggingIn(true);
-      // 데모용 지연 — 실제로는 API 응답을 받은 뒤 바로 이동하면 됩니다.
-      setTimeout(() => {
-        router.push("/channels/connect");
-      }, 1400);
-    } else {
-      setLoginError(true);
-    }
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoginError(false);
+  setIsLoggingIn(true);
+
+  try {
+    const result = await postLogin({ email, password });
+    login({ email: result.email, name: result.name, role: result.role });
+    router.push(result.role === "ADMIN" ? "/admin/cs" : "/channel");
+  } catch {
+    setLoginError(true);
+    setIsLoggingIn(false);
+  }
+};
 
   const inputClass = (hasError: boolean) =>
     "w-full rounded-xl border bg-[#F9FAFB] px-5 py-[18px] text-[15px] text-[#111111] placeholder:text-black/50 focus:outline-none focus:ring-2 " +
