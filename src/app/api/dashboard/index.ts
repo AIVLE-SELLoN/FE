@@ -1,8 +1,7 @@
 import { api } from '../client';
-import { dashboardResponseSchema, type DashboardResponse } from './types';
+import { dashboardResponseSchema, type DashboardData, type DashboardPeriod } from './types';
 
-// TODO: 실제 엔드포인트로 교체 (Notion API 명세서 참고)
-export async function getDashboard(): Promise<DashboardResponse> {
-  const res = await api.get<unknown>('/dashboard');
+export async function getDashboard(period: DashboardPeriod = '7D'): Promise<DashboardData> {
+  const res = await api.get<unknown>(`/api/v1/sellon/dashboard?period=${period}`);
   return dashboardResponseSchema.parse(res);
 }

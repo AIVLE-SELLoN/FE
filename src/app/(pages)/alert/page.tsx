@@ -1,91 +1,124 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, AlertTriangle, Loader2 } from "lucide-react";
 import NotificationBell from "@/components/common/NotificationBell";
+import { useAuthStore } from "@/store/useAuthStore";
+import { getAlerts, markAlertAsRead } from "@/app/api/alert";
+import type { AlertSummary } from "@/app/api/alert/types";
+import { ApiError } from "@/app/api/client";
 
-type AlertItem = {
-  id: string;
-  group: string;
-  groupDate: string;
-  channelInitial: string;
-  channelBg: string;
-  channelText: string;
-  title: string;
-  description: string;
-  timeAgo: string;
-  unread: boolean;
-};
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
 
-// 목데이터 — 실제로는 알림 목록 API에서 받아와야 해요.
-// alerts 배열을 []로 비우면 "현재 이상 징후가 없습니다" 빈 상태가 자동으로 떠요.
-export const alerts: AlertItem[] = [
-  {
-    id: "today-1",
-    group: "오늘",
-    groupDate: "2026.07.01",
-    channelInitial: "쿠",
-    channelBg: "#FFF7ED",
-    channelText: "#FF6900",
-    title: "미디 원피스 · 쿠팡 · 색상 문의 180% 증가",
-    description: "z ≥ 3 · 뚜렷한 이상 신호가 감지되었습니다. 상세 내용을 확인하세요.",
-    timeAgo: "3시간 전",
-    unread: true,
-  },
-  {
-    id: "yesterday-1",
-    group: "어제",
-    groupDate: "2026.06.30",
-    channelInitial: "네",
-    channelBg: "#ECFDF5",
-    channelText: "#00BC7D",
-    title: "니트 가디건 · 네이버 · 색상 문의",
-    description: "z-score 2.3 · 경계선 케이스입니다. 주의 깊은 모니터링이 필요합니다.",
-    timeAgo: "하루 전",
-    unread: true,
-  },
-  {
-    id: "week-1",
-    group: "이번 주",
-    groupDate: "2026.06.28 - 2026.07.05",
-    channelInitial: "리",
-    channelBg: "#FAF5FF",
-    channelText: "#9333EA",
-    title: "월간 운영 리포트가 도착했습니다",
-    description: "7월 채널 운영 리포트를 확인하고 성과를 분석해보세요.",
-    timeAgo: "1일 전",
-    unread: true,
-  },
-  {
-    id: "week-2",
-    group: "이번 주",
-    groupDate: "2026.06.28 - 2026.07.05",
-    channelInitial: "완",
-    channelBg: "#ECFDF5",
-    channelText: "#059669",
-    title: "리포트가 정상적으로 전송되었습니다",
-    description: "요청하신 채널 비교 리포트가 이메일로 전송 완료되었습니다.",
-    timeAgo: "2일 전",
-    unread: false,
-  },
-];
+function formatDate(d: Date) {
+  return d.toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" });
+}
+
+function getGroupLabel(notifiedAt: string): { label: string; date: string } {
+  const d = new Date(notifiedAt);
+  const diffDays = Math.floor((startOfDay(new Date()).getTime() - startOfDay(d).getTime()) / 86400000);
+  const dateLabel = formatDate(d);
+  if (diffDays === 0) return { label: "오늘", date: dateLabel };
+  if (diffDays === 1) return { label: "어제", date: dateLabel };
+  if (diffDays <= 7) return { label: "이번 주", date: dateLabel };
+  return { label: dateLabel, date: dateLabel };
+}
+
+function timeAgo(notifiedAt: string): string {
+  const diffMs = Date.now() - new Date(notifiedAt).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `${Math.max(mins, 0)}분 전`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  return `${days}일 전`;
+}
 
 export default function AlertListPage() {
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const [tab, setTab] = useState<"all" | "unread">("all");
 
-  const filtered = tab === "all" ? alerts : alerts.filter((a) => a.unread);
-  const unreadCount = alerts.filter((a) => a.unread).length;
+  const [items, setItems] = useState<AlertSummary[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasNext, setHasNext] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const groups: { label: string; date: string; items: AlertItem[] }[] = [];
-  for (const a of filtered) {
+  useEffect(() => {
+    if (!hasHydrated) return;
+    let ignore = false;
+
+    async function load() {
+      setLoading(true);
+      setErrorMessage(null);
+      try {
+        const res = await getAlerts({ unreadOnly: tab === "unread" });
+        if (ignore) return;
+        setItems(res.items);
+        setTotalCount(res.totalCount);
+        setUnreadCount(res.unreadCount);
+        setNextCursor(res.nextCursor);
+        setHasNext(res.hasNext);
+      } catch (e) {
+        if (!ignore) setErrorMessage(e instanceof ApiError ? e.message : "알림을 불러오지 못했습니다.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      ignore = true;
+    };
+  }, [hasHydrated, tab]);
+
+  const handleLoadMore = async () => {
+    if (!nextCursor) return;
+    setLoadingMore(true);
+    try {
+      const res = await getAlerts({ cursor: nextCursor, unreadOnly: tab === "unread" });
+      setItems((prev) => [...prev, ...res.items]);
+      setNextCursor(res.nextCursor);
+      setHasNext(res.hasNext);
+    } catch (e) {
+      setErrorMessage(e instanceof ApiError ? e.message : "알림을 더 불러오지 못했습니다.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleClickAlert = (a: AlertSummary) => {
+    if (a.isRead) return;
+    markAlertAsRead(a.notificationId)
+      .then((res) => {
+        setItems((prev) =>
+          prev.map((it) => (it.notificationId === a.notificationId ? { ...it, isRead: true } : it))
+        );
+        setUnreadCount(res.unreadCount);
+      })
+      .catch(() => {
+        // 읽음 처리 실패해도 상세 페이지 이동 자체는 막지 않음
+      });
+  };
+
+  const groups: { label: string; date: string; items: AlertSummary[] }[] = [];
+  for (const a of items) {
+    const g = getGroupLabel(a.notifiedAt);
     const last = groups[groups.length - 1];
-    if (last && last.label === a.group) {
+    if (last && last.label === g.label && last.date === g.date) {
       last.items.push(a);
     } else {
-      groups.push({ label: a.group, date: a.groupDate, items: [a] });
+      groups.push({ label: g.label, date: g.date, items: [a] });
     }
   }
+
+  if (!hasHydrated) return null;
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -100,7 +133,15 @@ export default function AlertListPage() {
             <h1 className="text-2xl font-bold text-slate-900">이상 이벤트 알림함</h1>
           </div>
 
-          {alerts.length === 0 ? (
+          {errorMessage && (
+            <div className="mx-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {errorMessage}
+            </div>
+          )}
+
+          {loading ? (
+            <p className="px-5 text-sm text-slate-400">불러오는 중...</p>
+          ) : totalCount === 0 ? (
             <EmptyState />
           ) : (
             <div className="flex flex-col gap-5 px-5">
@@ -119,7 +160,7 @@ export default function AlertListPage() {
                       (tab === "all" ? "bg-indigo-500 text-white" : "bg-slate-200 text-slate-600")
                     }
                   >
-                    {alerts.length}
+                    {totalCount}
                   </span>
                 </button>
                 <button
@@ -141,7 +182,7 @@ export default function AlertListPage() {
                 </button>
               </div>
 
-              {filtered.length === 0 ? (
+              {items.length === 0 ? (
                 <p className="py-16 text-center text-sm text-slate-400">미확인 알림이 없습니다.</p>
               ) : (
                 <div className="flex flex-col gap-10">
@@ -154,23 +195,20 @@ export default function AlertListPage() {
                       <div className="flex flex-col gap-3">
                         {g.items.map((a) => (
                           <Link
-                            key={a.id}
-                            href={`/alert/${a.id}`}
+                            key={a.notificationId}
+                            href={`/alert/${a.notificationId}`}
+                            onClick={() => handleClickAlert(a)}
                             className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-5 text-left hover:bg-slate-50"
                           >
-                            <span
-                              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-xl font-bold"
-                              style={{ backgroundColor: a.channelBg, color: a.channelText }}
-                            >
-                              {a.channelInitial}
+                            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                              <AlertTriangle className="h-6 w-6" />
                             </span>
                             <div className="flex-1">
-                              <p className="text-[15px] font-semibold text-slate-800">{a.title}</p>
-                              <p className="pt-1 text-[13px] text-slate-500">{a.description}</p>
+                              <p className="text-[15px] font-semibold text-slate-800">{a.message}</p>
                             </div>
                             <div className="flex flex-col items-end gap-2">
-                              <span className="text-[13px] text-slate-400">{a.timeAgo}</span>
-                              {a.unread && <span className="h-2 w-2 rounded-full bg-indigo-500" />}
+                              <span className="text-[13px] text-slate-400">{timeAgo(a.notifiedAt)}</span>
+                              {!a.isRead && <span className="h-2 w-2 rounded-full bg-indigo-500" />}
                             </div>
                           </Link>
                         ))}
@@ -180,12 +218,24 @@ export default function AlertListPage() {
                 </div>
               )}
 
-              <div className="flex justify-center pt-2">
-                <button className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                  이전 알림 더보기
-                  <ChevronRight className="h-3 w-3" />
-                </button>
-              </div>
+              {hasNext && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-8 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    {loadingMore ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        이전 알림 더보기
+                        <ChevronRight className="h-3 w-3" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </main>
@@ -221,7 +271,6 @@ function EmptyState() {
       <p className="text-center text-[13px] text-[#71717A]">
         모든 채널의 CS·반품 지표가 정상 범위 내에 있습니다
       </p>
-      <p className="text-center text-xs text-[#A1A1AA]">마지막 갱신: 2026-07-15 14:32</p>
     </div>
   );
 }

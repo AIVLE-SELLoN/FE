@@ -3,6 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  sendEmailVerification,
+  confirmEmailVerification,
+  signupRoot,
+  signupMember,
+} from "@/app/api/auth";
+import { ApiError } from "@/app/api/client";
 
 const REQUIRED_TERMS = [
   { id: "service", label: "[필수] 이용약관 동의" },
@@ -16,11 +23,24 @@ const ALL_TERMS = [...REQUIRED_TERMS, ...OPTIONAL_TERMS];
 export default function SignupPage() {
   const router = useRouter();
 
-  // 이 두 state로 화면 전체(루트 폼 / 일반 폼 / 약관동의)를 전환해요. URL은 안 바뀌어요.
   const [accountType, setAccountType] = useState<"root" | "normal">("root");
   const [step, setStep] = useState<"form" | "terms">("form");
 
+  // 폼 입력값
+  const [brand, setBrand] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+
+  // 이메일 인증 상태
   const [codeSent, setCodeSent] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+
+  // 제출 상태
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [checked, setChecked] = useState<Record<string, boolean>>({
     service: false,
@@ -35,10 +55,75 @@ export default function SignupPage() {
   };
   const toggleOne = (id: string) => setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  const handleSubmitForm = (e: React.FormEvent) => {
+  async function handleSendCode() {
+    if (!email) {
+      setFormError("이메일을 먼저 입력해주세요.");
+      return;
+    }
+    setFormError(null);
+    setSendingCode(true);
+    try {
+      await sendEmailVerification(email);
+      setCodeSent(true);
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "인증번호 발송에 실패했습니다.");
+    } finally {
+      setSendingCode(false);
+    }
+  }
+
+  async function handleSubmitForm(e: React.FormEvent) {
     e.preventDefault();
-    setStep("terms");
-  };
+    setFormError(null);
+
+    if (!brand || !email || !password || !nickname) {
+      setFormError("모든 항목을 입력해주세요.");
+      return;
+    }
+    if (password.length < 8) {
+      setFormError("비밀번호는 8자 이상이어야 합니다.");
+      return;
+    }
+    if (!verificationCode) {
+      setFormError("인증번호를 입력해주세요.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { verificationToken: token } = await confirmEmailVerification(email, verificationCode);
+      setVerificationToken(token);
+      setStep("terms");
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "인증번호가 올바르지 않습니다.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleFinalSubmit() {
+    if (!verificationToken) {
+      setFormError("이메일 인증부터 다시 진행해주세요.");
+      setStep("form");
+      return;
+    }
+
+    setSubmitting(true);
+    setFormError(null);
+    try {
+      if (accountType === "root") {
+        await signupRoot({ email, password, name: nickname, companyName: brand, verificationToken });
+      } else {
+        await signupMember({ email, password, name: nickname, companyKey: brand, verificationToken });
+      }
+      router.push("/login");
+    } catch (err) {
+      setFormError(err instanceof ApiError ? err.message : "회원가입에 실패했습니다.");
+      setStep("form");
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (step === "terms") {
     return (
@@ -79,13 +164,15 @@ export default function SignupPage() {
             </div>
           </div>
 
+          {formError && <p className="pt-3 text-[12px] text-red-500">{formError}</p>}
+
           <button
             type="button"
-            disabled={!requiredAgreed}
-            onClick={() => router.push("/channel")}
+            disabled={!requiredAgreed || submitting}
+            onClick={handleFinalSubmit}
             className="mt-6 w-full rounded-xl bg-indigo-500 py-5 text-sm font-bold text-white transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
           >
-            동의하고 계속하기
+            {submitting ? "가입 처리 중..." : "동의하고 계속하기"}
           </button>
 
           <button
@@ -131,7 +218,6 @@ export default function SignupPage() {
               AI와 함께 설계하는 멀티셀러 플랫폼 — SELLoN 셀러 계정을 만들어보세요
             </p>
 
-            {/* 계정 타입 전환 */}
             <div className="mt-6 flex gap-1 rounded-xl bg-[#F5F6F8] p-1">
               <button
                 type="button"
@@ -163,6 +249,8 @@ export default function SignupPage() {
                 <input
                   id="brand"
                   type="text"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
                   placeholder={accountType === "root" ? "예: SELLoN" : "예: sLN-xxxxxx...."}
                   className="w-full rounded-[4.44px] border-[0.28px] border-[#E4E4E7] bg-[#FAFAFA] px-3.5 py-4 text-[13px] text-[#18181B] placeholder:text-[#A1A1AA] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -175,6 +263,8 @@ export default function SignupPage() {
                 <input
                   id="email"
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="example@sellon.co.kr"
                   className="w-full rounded-[4.44px] border-[0.28px] border-[#E4E4E7] bg-[#FAFAFA] px-3.5 py-4 text-[13px] text-[#18181B] placeholder:text-[#A1A1AA] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -187,6 +277,8 @@ export default function SignupPage() {
                 <input
                   id="password"
                   type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="8자 이상 영문/숫자/특수문자 조합"
                   className="w-full rounded-[4.44px] border-[0.28px] border-[#E4E4E7] bg-[#FAFAFA] px-3.5 py-4 text-[13px] text-[#18181B] placeholder:text-[#A1A1AA] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -199,6 +291,8 @@ export default function SignupPage() {
                 <input
                   id="nickname"
                   type="text"
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
                   placeholder={accountType === "root" ? "루트 사용자 이름을 작성해주세요" : "사용자 닉네임을 작성해주세요"}
                   className="w-full rounded-[4.44px] border-[0.28px] border-[#E4E4E7] bg-[#FAFAFA] px-3.5 py-4 text-[13px] text-[#18181B] placeholder:text-[#A1A1AA] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
@@ -213,15 +307,18 @@ export default function SignupPage() {
                     id="verificationCode"
                     type="text"
                     maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
                     placeholder="6자리 인증번호 입력"
                     className="flex-1 rounded-[4.44px] border-[0.28px] border-[#E4E4E7] bg-[#FAFAFA] px-3.5 py-4 text-[13px] text-[#18181B] placeholder:text-[#A1A1AA] focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                   <button
                     type="button"
-                    onClick={() => setCodeSent(true)}
-                    className="w-[148px] shrink-0 rounded-[4.44px] bg-indigo-500 text-[11px] font-bold text-white hover:bg-indigo-600"
+                    onClick={handleSendCode}
+                    disabled={sendingCode}
+                    className="w-[148px] shrink-0 rounded-[4.44px] bg-indigo-500 text-[11px] font-bold text-white hover:bg-indigo-600 disabled:opacity-50"
                   >
-                    {codeSent ? "재발송" : "인증번호 발송"}
+                    {sendingCode ? "발송 중..." : codeSent ? "재발송" : "인증번호 발송"}
                   </button>
                 </div>
                 <p className="pt-2 text-[11px] text-[#A1A1AA]">
@@ -231,11 +328,14 @@ export default function SignupPage() {
                 </p>
               </div>
 
+              {formError && <p className="text-[12px] text-red-500">{formError}</p>}
+
               <button
                 type="submit"
-                className="mt-2 w-full rounded-xl bg-indigo-500 py-5 text-sm font-bold text-white transition-transform hover:scale-[1.01]"
+                disabled={submitting}
+                className="mt-2 w-full rounded-xl bg-indigo-500 py-5 text-sm font-bold text-white transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-40"
               >
-                회원가입
+                {submitting ? "확인 중..." : "회원가입"}
               </button>
             </form>
 

@@ -17,6 +17,7 @@ import {
   Legend,
 } from "recharts";
 import {
+  refreshAllChannelComparisons,
   getChannelComparisons,
   getChannelAspects,
   getChannelInquiryTypeRadar,
@@ -50,11 +51,12 @@ function SectionCard({ title, subtitle, children }: { title: string; subtitle: s
   );
 }
 
+// 집계할 데이터(주문/리뷰/문의)가 없으면 백엔드가 null을 내려줘요. 그때는 "-"로 표시합니다.
 const KPI_FIELDS = [
   { label: "총 문의 수", value: (c: ChannelComparisonItem) => `${c.totalInquiryCount.toLocaleString()}건`, note: (c: ChannelComparisonItem) => c.totalInquiryComment },
-  { label: "주문당 문의율", value: (c: ChannelComparisonItem) => `${c.inquiryRatePerOrder.toFixed(1)}%`, note: (c: ChannelComparisonItem) => c.inquiryRateComment },
-  { label: "평균 평점", value: (c: ChannelComparisonItem) => c.avgRating.toFixed(1), note: (c: ChannelComparisonItem) => c.avgRatingComment },
-  { label: "주문당 리뷰율", value: (c: ChannelComparisonItem) => `${c.reviewRatePerOrder.toFixed(1)}%`, note: (c: ChannelComparisonItem) => c.reviewRateComment },
+  { label: "주문당 문의율", value: (c: ChannelComparisonItem) => c.inquiryRatePerOrder != null ? `${c.inquiryRatePerOrder.toFixed(1)}%` : "-", note: (c: ChannelComparisonItem) => c.inquiryRateComment },
+  { label: "평균 평점", value: (c: ChannelComparisonItem) => c.avgRating != null ? c.avgRating.toFixed(1) : "-", note: (c: ChannelComparisonItem) => c.avgRatingComment },
+  { label: "주문당 리뷰율", value: (c: ChannelComparisonItem) => c.reviewRatePerOrder != null ? `${c.reviewRatePerOrder.toFixed(1)}%` : "-", note: (c: ChannelComparisonItem) => c.reviewRateComment },
 ];
 
 export default function ChannelComparisonPage() {
@@ -67,98 +69,75 @@ export default function ChannelComparisonPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-  // TODO: 백엔드 연결 디버깅 끝나면 아래 mock 대신 load() 다시 호출
-  const mockChannels: ChannelComparisonItem[] = [
-    {
-      usersChannelKey: 1, channelType: "COUPANG",
-      totalInquiryCount: 2340, totalInquiryChangeRate: 12, totalInquiryComment: "+12% vs 전월",
-      inquiryRatePerOrder: 8.4, inquiryRateComment: "판매 대비 문의 발생률 8.4%로 무난한 수준이에요.",
-      avgRating: 3.8, avgRatingComment: "평균 평점 3.8점으로 보통 수준이에요.",
-      reviewRatePerOrder: 12.1, reviewRateComment: "판매 대비 리뷰 작성률 12.1%예요.",
-      positiveRatio: 38, neutralRatio: 35, negativeRatio: 27,
-      sentimentComment: "긍정 비율 38%예요.",
-      aspectComment: "COUPANG 채널에 배송 문의가 집중되어 있어요 · 편중형 패턴(채널 특성 요인 가능성)",
-    },
-    {
-      usersChannelKey: 2, channelType: "NAVER",
-      totalInquiryCount: 1580, totalInquiryChangeRate: 5, totalInquiryComment: "+5% vs 전월",
-      inquiryRatePerOrder: 4.2, inquiryRateComment: "판매 대비 문의 발생률 4.2%로 무난한 수준이에요.",
-      avgRating: 4.3, avgRatingComment: "평균 평점 4.3점 · 우수한 수준이에요.",
-      reviewRatePerOrder: 18.5, reviewRateComment: "판매 대비 리뷰 작성률 18.5%예요.",
-      positiveRatio: 55, neutralRatio: 30, negativeRatio: 15,
-      sentimentComment: "채널 중 긍정 비율이 가장 높아요 · 고객 경험 품질 우위",
-      aspectComment: "상대적으로 고른 분포 · 특정 유형에 쏠리지 않는 편이에요.",
-    },
-    {
-      usersChannelKey: 3, channelType: "ZIGZAG",
-      totalInquiryCount: 420, totalInquiryChangeRate: 0, totalInquiryComment: "데이터 부족",
-      inquiryRatePerOrder: 6.1, inquiryRateComment: "판매 대비 문의 발생률 6.1%로 무난한 수준이에요.",
-      avgRating: 3.4, avgRatingComment: "평균 평점 3.4점으로 보통 수준이에요.",
-      reviewRatePerOrder: 7.8, reviewRateComment: "판매 대비 리뷰 작성률 7.8%예요.",
-      positiveRatio: 42, neutralRatio: 45, negativeRatio: 13,
-      sentimentComment: "긍정 비율 42%예요.",
-      aspectComment: "최근 문의 데이터가 충분하지 않아요.",
-    },
-  ];
+    let cancelled = false;
 
-  setChannels(mockChannels);
-  setAspects({
-    1: [
-      { inquireType: "오배송", inquiryCount: 260, ratio: 62 },
-      { inquireType: "파손", inquiryCount: 88, ratio: 21 },
-      { inquireType: "사이즈", inquiryCount: 38, ratio: 9 },
-    ],
-    2: [
-      { inquireType: "색상", inquiryCount: 180, ratio: 41 },
-      { inquireType: "오배송", inquiryCount: 123, ratio: 28 },
-      { inquireType: "소재", inquiryCount: 66, ratio: 15 },
-    ],
-    3: [], // 지그재그는 데이터 부족 케이스
-  });
-  setMonthly({
-    1: [
-      { yearMonth: "2026-01", inquiryCount: 314 }, { yearMonth: "2026-02", inquiryCount: 274 },
-      { yearMonth: "2026-03", inquiryCount: 404 }, { yearMonth: "2026-04", inquiryCount: 364 },
-      { yearMonth: "2026-05", inquiryCount: 434 }, { yearMonth: "2026-06", inquiryCount: 384 },
-    ],
-    2: [
-      { yearMonth: "2026-01", inquiryCount: 204 }, { yearMonth: "2026-02", inquiryCount: 234 },
-      { yearMonth: "2026-03", inquiryCount: 189 }, { yearMonth: "2026-04", inquiryCount: 254 },
-      { yearMonth: "2026-05", inquiryCount: 299 }, { yearMonth: "2026-06", inquiryCount: 274 },
-    ],
-    3: [
-      { yearMonth: "2026-01", inquiryCount: 74 }, { yearMonth: "2026-02", inquiryCount: 59 },
-      { yearMonth: "2026-03", inquiryCount: 84 }, { yearMonth: "2026-04", inquiryCount: 104 },
-      { yearMonth: "2026-05", inquiryCount: 89 }, { yearMonth: "2026-06", inquiryCount: 66 },
-    ],
-  });
-  setInsights({
-    1: [
-      "배송 문의가 전체의 62%로 집중 — 편중형 패턴",
-      "판매 대비 문의 발생률이 다소 높은 편 — 상품 이슈 점검 필요",
-    ],
-    2: [
-      "색상·품질 문의 비중 높음 — 상품 정보 보완 효과적",
-      "긍정 감성 55%로 채널 중 가장 높음",
-    ],
-    3: ["최근 문의 데이터가 30건 미만으로 적어 패턴 분석은 유보돼요."],
-  });
-  setRadarRows([
-    { type: "색상", 쿠팡: 5, 네이버: 41, 지그재그: 20 },
-    { type: "오배송", 쿠팡: 62, 네이버: 28, 지그재그: 15 },
-    { type: "사이즈", 쿠팡: 9, 네이버: 8, 지그재그: 18 },
-    { type: "소재", 쿠팡: 3, 네이버: 15, 지그재그: 12 },
-    { type: "파손", 쿠팡: 21, 네이버: 10, 지그재그: 10 },
-    { type: "기타", 쿠팡: 5, 네이버: 8, 지그재그: 10 },
-  ]);
-  setLoading(false);
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        // 조회 API들이 스냅샷 테이블을 읽는 구조라, 매 진입 시 전체 채널 스냅샷부터 새로 계산해둔다.
+        await refreshAllChannelComparisons();
 
-  // 아래는 실제 연결용 — 지금은 주석 처리
-  // let cancelled = false;
-  // async function load() { ... }
-  // load();
-  // return () => { cancelled = true; };
-}, []);
+        // 채널 목록 + 채널별 문의 유형 전체 분포(레이더용)는 한 번에 조회
+        const [channelList, radarData] = await Promise.all([
+          getChannelComparisons(),
+          getChannelInquiryTypeRadar(),
+        ]);
+        if (cancelled) return;
+
+        // 채널별 상세(속성 top3, 월별 추이, 인사이트)는 채널마다 따로 조회해서 합침
+        const perChannel = await Promise.all(
+          channelList.map(async (c) => {
+            const [aspectList, monthlyList, insightList] = await Promise.all([
+              getChannelAspects(c.usersChannelKey),
+              getChannelMonthly(c.usersChannelKey),
+              getChannelInsights(c.usersChannelKey),
+            ]);
+            return { usersChannelKey: c.usersChannelKey, aspectList, monthlyList, insightList };
+          }),
+        );
+        if (cancelled) return;
+
+        const aspectsMap: Record<number, ChannelInquiryTypeItem[]> = {};
+        const monthlyMap: Record<number, ChannelMonthlyItem[]> = {};
+        const insightsMap: Record<number, string[]> = {};
+        perChannel.forEach((p) => {
+          aspectsMap[p.usersChannelKey] = p.aspectList;
+          monthlyMap[p.usersChannelKey] = p.monthlyList;
+          insightsMap[p.usersChannelKey] = p.insightList;
+        });
+
+        // 레이더 차트는 recharts 구조상 "유형" 단위 행 + 채널별 라벨 컬럼으로 재구성해야 함
+        const radarMap = new Map<string, Record<string, string | number>>();
+        radarData.forEach((r) => {
+          const meta = getMeta(r.channelType);
+          r.distribution.forEach((d) => {
+            const row = radarMap.get(d.inquireType) ?? { type: d.inquireType };
+            row[meta.label] = d.ratio;
+            radarMap.set(d.inquireType, row);
+          });
+        });
+
+        setChannels(channelList);
+        setAspects(aspectsMap);
+        setMonthly(monthlyMap);
+        setInsights(insightsMap);
+        setRadarRows(Array.from(radarMap.values()));
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "채널 비교 데이터를 불러오지 못했습니다.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // 월별 추이: 채널별로 따로 오는 데이터를 yearMonth 기준으로 합침
   const monthlyTrend = useMemo(() => {
     const rows = new Map<string, Record<string, string | number>>();
@@ -328,15 +307,21 @@ export default function ChannelComparisonPage() {
                           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: meta.color }} />
                           <span className="text-sm font-semibold text-[#3A3A44]">{meta.label}</span>
                         </div>
-                        <div className="flex h-5 overflow-hidden rounded-full bg-[#F0F0F3]">
-                          <div style={{ width: `${c.positiveRatio}%`, backgroundColor: meta.color, opacity: 0.9 }} />
-                          <div style={{ width: `${c.neutralRatio}%`, backgroundColor: meta.color, opacity: 0.35 }} />
-                        </div>
-                        <div className="flex gap-4 pt-2 text-xs text-[#A5A5AF]">
-                          <span>긍정 {c.positiveRatio.toFixed(0)}%</span>
-                          <span>중립 {c.neutralRatio.toFixed(0)}%</span>
-                          <span>부정 {c.negativeRatio.toFixed(0)}%</span>
-                        </div>
+                        {c.positiveRatio == null && c.neutralRatio == null && c.negativeRatio == null ? (
+                          <p className="py-1 text-xs text-[#C0C0C8]">감성 분석에 쓸 문의 데이터가 충분하지 않아요</p>
+                        ) : (
+                          <>
+                            <div className="flex h-5 overflow-hidden rounded-full bg-[#F0F0F3]">
+                              <div style={{ width: `${c.positiveRatio ?? 0}%`, backgroundColor: meta.color, opacity: 0.9 }} />
+                              <div style={{ width: `${c.neutralRatio ?? 0}%`, backgroundColor: meta.color, opacity: 0.35 }} />
+                            </div>
+                            <div className="flex gap-4 pt-2 text-xs text-[#A5A5AF]">
+                              <span>긍정 {c.positiveRatio != null ? c.positiveRatio.toFixed(0) : "-"}%</span>
+                              <span>중립 {c.neutralRatio != null ? c.neutralRatio.toFixed(0) : "-"}%</span>
+                              <span>부정 {c.negativeRatio != null ? c.negativeRatio.toFixed(0) : "-"}%</span>
+                            </div>
+                          </>
+                        )}
                         {c.sentimentComment && <p className="pt-1 text-[11px] text-[#7A7A85]">{c.sentimentComment}</p>}
                       </div>
                     );

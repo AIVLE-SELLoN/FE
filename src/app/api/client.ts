@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/store/useAuthStore';
 import type { ApiErrorPayload, ApiResponse } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -26,7 +27,7 @@ export class ApiError extends Error {
 
 // TODO: 로그인 붙으면 여기서 토큰 읽어오기 (localStorage/store 등)
 function getAccessToken(): string | null {
-  return null;
+  return useAuthStore.getState().accessToken;
 }
 
 function buildUrl(path: string, params?: QueryParams) {

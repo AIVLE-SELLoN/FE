@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import Image from "next/image";
 
 const navLinks = [
   { label: "기능", href: "#features" },
@@ -12,14 +12,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-[1512px] items-center justify-between px-6 lg:px-[120px]">
         <div className="flex items-center gap-10">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-white">
-              <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={2.5} />
-            </span>
-            <span className="text-xl font-bold tracking-tight text-[#1A1F27]">
-              SELLoN
-            </span>
-          </Link>
+          <Image src="/logo3.png" alt="SELLoN" width={140} height={36} />
           <nav className="hidden items-center gap-8 md:flex">
             {navLinks.map((link) => (
               <a

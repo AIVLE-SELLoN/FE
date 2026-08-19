@@ -2,114 +2,79 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Bell, AlertTriangle, TrendingDown, MessageSquare, Package } from "lucide-react";
+import { Bell, AlertTriangle } from "lucide-react";
+import { getAlerts, markAlertAsRead } from "@/app/api/alert";
+import type { AlertSummary } from "@/app/api/alert/types";
 
-type AnomalySeverity = "high" | "medium";
-type AnomalyType = "cs" | "return" | "inventory" | "sales";
-
-type AnomalyNotification = {
-  id: string;
-  type: AnomalyType;
-  channel: string;
-  title: string;
-  detail: string;
-  time: string;
-  severity: AnomalySeverity;
-};
-
-// 목데이터 — 실제로는 이상 이벤트 탐지 API(오케스트레이터 에이전트 결과)에서 받아와야 해요.
-const notifications: AnomalyNotification[] = [
-  {
-    id: "n1",
-    type: "cs",
-    channel: "쿠팡",
-    title: "CS 문의량 급증 감지",
-    detail: "최근 24시간 CS 문의가 평소 대비 3.2배 증가했어요.",
-    time: "10분 전",
-    severity: "high",
-  },
-  {
-    id: "n2",
-    type: "return",
-    channel: "네이버",
-    title: "반품률 이상 탐지",
-    detail: "'프리미엄 면 티셔츠' 반품률이 전주 대비 18%p 상승했어요.",
-    time: "42분 전",
-    severity: "high",
-  },
-  {
-    id: "n3",
-    type: "sales",
-    channel: "지그재그",
-    title: "채널 간 CS 유형 분포 격차",
-    detail: "색상 관련 CS 비중이 다른 채널 대비 눈에 띄게 높아요.",
-    time: "1시간 전",
-    severity: "medium",
-  },
-  {
-    id: "n4",
-    type: "inventory",
-    channel: "쿠팡",
-    title: "재고 소진 임박",
-    detail: "'베이직 니트 가디건' 재고가 3일 내 소진될 것으로 예상돼요.",
-    time: "3시간 전",
-    severity: "medium",
-  },
-  {
-    id: "n5",
-    type: "cs",
-    channel: "네이버",
-    title: "동일 유형 CS 반복 접수",
-    detail: "사이즈 불만 CS가 동일 상품에서 5건 연속 접수됐어요.",
-    time: "어제",
-    severity: "medium",
-  },
-];
-
-const TYPE_ICON: Record<AnomalyType, typeof AlertTriangle> = {
-  cs: MessageSquare,
-  return: TrendingDown,
-  inventory: Package,
-  sales: AlertTriangle,
-};
-
-const SEVERITY_STYLE: Record<AnomalySeverity, { bg: string; text: string }> = {
-  high: { bg: "bg-red-50", text: "text-red-500" },
-  medium: { bg: "bg-amber-50", text: "text-amber-600" },
-};
+function timeAgo(notifiedAt: string): string {
+  const diffMs = Date.now() - new Date(notifiedAt).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "방금 전";
+  if (mins < 60) return `${mins}분 전`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days < 2) return "어제";
+  return `${days}일 전`;
+}
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<AlertSummary[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const READ_IDS_STORAGE_KEY = "sellon_read_notification_ids";
-
-  // 읽음 처리한 알림 ID를 로컬 스토리지에서 복원
+  // 벨 뱃지용 — 마운트 시 미확인 건수만 가볍게 가져와요
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(READ_IDS_STORAGE_KEY);
-      if (stored) setReadIds(new Set(JSON.parse(stored)));
-    } catch {
-      // 스토리지 접근 실패 시 무시하고 전부 안읽음으로 취급
-    }
+    let ignore = false;
+    getAlerts({ size: 5 })
+      .then((res) => {
+        if (ignore) return;
+        setItems(res.items);
+        setUnreadCount(res.unreadCount);
+      })
+      .catch(() => {
+        // 뱃지 하나 못 띄운다고 화면을 막을 필요는 없어서 조용히 무시
+      });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
-  const markAsRead = (id: string) => {
-    setReadIds((prev) => {
-      if (prev.has(id)) return prev;
-      const next = new Set(prev);
-      next.add(id);
-      try {
-        window.localStorage.setItem(READ_IDS_STORAGE_KEY, JSON.stringify(Array.from(next)));
-      } catch {
-        // 저장 실패해도 화면 상태는 그대로 유지
-      }
-      return next;
-    });
+  // 드롭다운을 열 때마다 최신 5건으로 새로고침
+  useEffect(() => {
+    if (!open) return;
+    let ignore = false;
+    setLoading(true);
+    getAlerts({ size: 5 })
+      .then((res) => {
+        if (ignore) return;
+        setItems(res.items);
+        setUnreadCount(res.unreadCount);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!ignore) setLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [open]);
+
+  const handleClickItem = (n: AlertSummary) => {
+    setOpen(false);
+    if (n.isRead) return;
+    markAlertAsRead(n.notificationId)
+      .then((res) => {
+        setItems((prev) => prev.map((it) => (it.notificationId === n.notificationId ? { ...it, isRead: true } : it)));
+        setUnreadCount(res.unreadCount);
+      })
+      .catch(() => {
+        // 읽음 처리 실패해도 상세 페이지 이동 자체는 막지 않음
+      });
   };
 
-  const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
   const hasUnread = unreadCount > 0;
 
   useEffect(() => {
@@ -149,38 +114,30 @@ export default function NotificationBell() {
             </div>
 
             <div className="flex max-h-[320px] flex-col overflow-y-auto">
-              {notifications.map((n) => {
-                const Icon = TYPE_ICON[n.type];
-                const style = SEVERITY_STYLE[n.severity];
-                const isRead = readIds.has(n.id);
-                return (
+              {loading ? (
+                <p className="px-4 py-8 text-center text-xs text-slate-400">불러오는 중...</p>
+              ) : items.length === 0 ? (
+                <p className="px-4 py-8 text-center text-xs text-slate-400">알림이 없어요.</p>
+              ) : (
+                items.map((n) => (
                   <Link
-                    key={n.id}
-                    href={`/alert/${n.id}`}
-                    onClick={() => {
-                      markAsRead(n.id);
-                      setOpen(false);
-                    }}
+                    key={n.notificationId}
+                    href={`/alert/${n.notificationId}`}
+                    onClick={() => handleClickItem(n)}
                     className={`flex items-start gap-3 border-b border-slate-50 px-4 py-3 last:border-b-0 hover:bg-slate-50 ${
-                      isRead ? "opacity-50" : ""
+                      n.isRead ? "opacity-50" : ""
                     }`}
                   >
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${style.bg}`}>
-                      <Icon className={`h-3.5 w-3.5 ${style.text}`} />
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-50">
+                      <AlertTriangle className="h-3.5 w-3.5 text-red-500" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">
-                          {n.channel}
-                        </span>
-                        <p className="truncate text-[13px] font-bold text-slate-900">{n.title}</p>
-                      </div>
-                      <p className="pt-1 text-xs leading-relaxed text-slate-500">{n.detail}</p>
-                      <p className="pt-1 text-[11px] text-slate-400">{n.time}</p>
+                      <p className="text-[13px] font-bold leading-relaxed text-slate-900">{n.message}</p>
+                      <p className="pt-1 text-[11px] text-slate-400">{timeAgo(n.notifiedAt)}</p>
                     </div>
                   </Link>
-                );
-              })}
+                ))
+              )}
             </div>
 
             <Link

@@ -1,8 +1,33 @@
 import { api } from '../client';
-import { alertResponseSchema, type AlertResponse } from './types';
+import { alertDetailResponseSchema, type AlertDetailResponse } from './types';
+import {
+  alertListResponseSchema,
+  alertReadResponseSchema,
+  type AlertListResponse,
+  type AlertReadResponse,
+} from './types';
 
-// TODO: 실제 엔드포인트로 교체 (Notion API 명세서 참고)
-export async function getAlert(): Promise<AlertResponse> {
-  const res = await api.get<unknown>('/alert');
-  return alertResponseSchema.parse(res);
+export async function getAlerts(params: {
+  cursor?: string;
+  size?: number;
+  unreadOnly?: boolean;
+} = {}): Promise<AlertListResponse> {
+  const data = await api.get<unknown>('/api/v1/sellon/alerts', {
+    params: {
+      cursor: params.cursor,
+      size: params.size ?? 20,
+      unreadOnly: params.unreadOnly ?? false,
+    },
+  });
+  return alertListResponseSchema.parse(data);
+}
+
+export async function markAlertAsRead(notificationId: number): Promise<AlertReadResponse> {
+  const data = await api.get<unknown>(`/api/v1/sellon/alerts/${notificationId}/read`);
+  return alertReadResponseSchema.parse(data);
+}
+
+export async function getAlertDetail(notificationId: number): Promise<AlertDetailResponse> {
+  const data = await api.get<unknown>(`/api/v1/sellon/alerts/${notificationId}`);
+  return alertDetailResponseSchema.parse(data);
 }

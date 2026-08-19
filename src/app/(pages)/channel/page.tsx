@@ -1,28 +1,42 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, LogIn, CheckCircle2, AlertTriangle, RotateCw, ChevronDown, RotateCcw, Info } from "lucide-react";
 import ChannelErrorModal from "@/components/common/ChannelErrorModal";
+import NaverMockLoginModal from "@/components/common/NaverMockLoginModal";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import NotificationBell from "@/components/common/NotificationBell";
 import Link from "next/link";
+import {
+  getChannels,
+  connectChannel,
+  disconnectChannel,
+  naverAuthorize,
+  naverCallback,
+  getSyncLogs,
+  pollSyncLogs,
+} from "@/app/api/channel";
+import type { ChannelSyncLogResponse } from "@/app/api/channel/types";
 
 type ChannelStatus = "connected" | "disconnected" | "error";
 
 type ApiKeyChannel = {
   id: string;
+  channelType: "COUPANG" | "ZIGZAG";
   name: string;
   initial: string;
   iconBg: string;
   iconColor: string;
   desc: string;
   status: ChannelStatus;
-  apiKeyValue?: string; // masked value or error code
+  apiKeyValue?: string; // masked value
+  errorMessage?: string;
 };
 
 const initialApiKeyChannels: ApiKeyChannel[] = [
   {
     id: "coupang",
+    channelType: "COUPANG",
     name: "Coupang",
     initial: "C",
     iconBg: "bg-orange-50",
@@ -32,6 +46,7 @@ const initialApiKeyChannels: ApiKeyChannel[] = [
   },
   {
     id: "zigzag",
+    channelType: "ZIGZAG",
     name: "지그재그",
     initial: "Z",
     iconBg: "bg-purple-50",
@@ -41,39 +56,28 @@ const initialApiKeyChannels: ApiKeyChannel[] = [
   },
 ];
 
-type SyncStatus = "success" | "failed";
-
-type SyncLog = {
-  id: string;
-  channel: string;
-  channelFilter: "coupang" | "zigzag" | "naver";
-  initial: string;
-  iconBg: string;
-  iconColor: string;
-  datetime: string;
-  status: SyncStatus;
-  detail: string;
+// 채널 연동 이력 화면에서 채널 표시용 아이콘/색상 매핑
+const CHANNEL_DISPLAY: Record<string, { label: string; initial: string; iconBg: string; iconColor: string }> = {
+  COUPANG: { label: "쿠팡", initial: "C", iconBg: "bg-orange-50", iconColor: "text-orange-500" },
+  ZIGZAG: { label: "지그재그", initial: "Z", iconBg: "bg-purple-50", iconColor: "text-purple-600" },
+  NAVER: { label: "스마트스토어", initial: "N", iconBg: "bg-blue-50", iconColor: "text-blue-500" },
 };
 
-const initialSyncLogs: SyncLog[] = [
-  { id: "log-1", channel: "쿠팡 동기화", channelFilter: "coupang", initial: "C", iconBg: "bg-orange-50", iconColor: "text-orange-500", datetime: "2026-07-07 09:00", status: "success", detail: "상품 1,284건 반영 완료" },
-  { id: "log-2", channel: "지그재그 동기화", channelFilter: "zigzag", initial: "Z", iconBg: "bg-purple-50", iconColor: "text-purple-600", datetime: "2026-07-06 21:00", status: "failed", detail: "인증 정보가 만료되어 동기화에 실패했습니다." },
-  { id: "log-3", channel: "스마트스토어 동기화", channelFilter: "naver", initial: "N", iconBg: "bg-blue-50", iconColor: "text-blue-500", datetime: "2026-07-06 18:30", status: "success", detail: "상품 852건 반영 완료" },
-  { id: "log-4", channel: "쿠팡 동기화", channelFilter: "coupang", initial: "C", iconBg: "bg-orange-50", iconColor: "text-orange-500", datetime: "2026-07-06 09:00", status: "success", detail: "상품 1,280건 반영 완료" },
-  { id: "log-5", channel: "지그재그 동기화", channelFilter: "zigzag", initial: "Z", iconBg: "bg-purple-50", iconColor: "text-purple-600", datetime: "2026-07-05 23:15", status: "success", detail: "상품 432건 반영 완료" },
-];
-
-const FILTERS: { label: string; value: SyncLog["channelFilter"] | "all" }[] = [
+const FILTERS: { label: string; value: "all" | "COUPANG" | "ZIGZAG" | "NAVER" }[] = [
   { label: "전체 채널", value: "all" },
-  { label: "쿠팡", value: "coupang" },
-  { label: "네이버", value: "naver" },
-  { label: "지그재그", value: "zigzag" },
+  { label: "쿠팡", value: "COUPANG" },
+  { label: "네이버", value: "NAVER" },
+  { label: "지그재그", value: "ZIGZAG" },
 ];
 
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 5;
+
+function formatDateTime(iso: string) {
+  // "2026-08-18T09:00:00" -> "2026-08-18 09:00"
+  return iso.replace("T", " ").slice(0, 16);
+}
 
 export default function ChannelPage() {
-  // URL은 안 바뀌고 이 상태값으로만 "채널 연동" ↔ "채널 연동 이력" 화면을 전환해요.
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -85,70 +89,200 @@ export default function ChannelPage() {
 
   const [channels, setChannels] = useState<ApiKeyChannel[]>(initialApiKeyChannels);
   const [naverStatus, setNaverStatus] = useState<ChannelStatus>("disconnected");
+  const [naverErrorMessage, setNaverErrorMessage] = useState<string | null>(null);
   const [errorModalChannel, setErrorModalChannel] = useState<string | null>(null);
 
-  const handleConnect = (id: string, apiKey: string) => {
-    // TODO: 백엔드 채널 연결 API 붙으면 이 부분을 실제 fetch 호출로 교체
-    // 지금은 프론트 단에서만 "입력한 키로 연동 시도" 흐름을 보여주는 자리표시자예요.
-    //
-    // 테스트용 실패 트리거: API 키에 "FAIL"이라고 입력하면 연결 실패(error 상태)로 처리돼요.
-    // 백엔드 API 붙으면 이 분기는 지우고 실제 응답의 성공/실패 여부로 바꾸면 됩니다.
-    const isMockFailure = apiKey.trim().toUpperCase() === "FAIL";
+  const [naverModalOpen, setNaverModalOpen] = useState(false);
+  const [naverLoading, setNaverLoading] = useState(false);
+  const [naverState, setNaverState] = useState<string | null>(null);
 
-    setChannels((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? isMockFailure
-            ? { ...c, status: "error", apiKeyValue: "인증 실패" }
-            : { ...c, status: "connected", apiKeyValue: "•".repeat(Math.min(apiKey.length, 20)) }
-          : c,
-      ),
-    );
+  // 새로고침해도 연동 상태가 유지되도록, 페이지 진입 시 현재 연동 목록을 불러온다.
+  useEffect(() => {
+    let ignore = false;
+
+    getChannels()
+      .then((list) => {
+        if (ignore) return;
+        setChannels((prev) =>
+          prev.map((c) => {
+            const found = list.find((l) => l.channelType === c.channelType);
+            if (!found) return c;
+            return {
+              ...c,
+              status: found.connectionStatus === "CONNECTED" ? "connected" : "disconnected",
+              apiKeyValue: found.connectionStatus === "CONNECTED" ? "•".repeat(16) : undefined,
+            };
+          }),
+        );
+        const naver = list.find((l) => l.channelType === "NAVER");
+        if (naver) {
+          setNaverStatus(naver.connectionStatus === "CONNECTED" ? "connected" : "disconnected");
+        }
+      })
+      .catch(() => {
+        // 목록 조회 실패는 화면을 막을 정도는 아니라서 기본값(미연결)으로 둔다.
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const handleConnect = async (id: string, apiKey: string) => {
+    const target = channels.find((c) => c.id === id);
+    if (!target) return;
+
+    try {
+      const response = await connectChannel(target.channelType, apiKey);
+      setChannels((prev) =>
+        prev.map((c) =>
+          c.id === id
+            ? {
+                ...c,
+                status: response.connectionStatus === "CONNECTED" ? "connected" : "disconnected",
+                apiKeyValue: "•".repeat(Math.min(apiKey.length, 20)),
+                errorMessage: undefined,
+              }
+            : c,
+        ),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "연동에 실패했습니다.";
+      setChannels((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: "error", errorMessage: message } : c)),
+      );
+    }
   };
 
-  const handleRetryReset = (id: string) => {
-    setChannels((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: "disconnected", apiKeyValue: undefined } : c)),
-    );
+  const handleRetryReset = async (id: string) => {
+    const target = channels.find((c) => c.id === id);
+    if (!target) return;
+
+    // 에러 상태였던 카드는 아직 백엔드에 CONNECTED로 남아있지 않을 수 있어 화면만 초기화한다.
+    if (target.status === "error") {
+      setChannels((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: "disconnected", apiKeyValue: undefined, errorMessage: undefined } : c)),
+      );
+      return;
+    }
+
+    try {
+      await disconnectChannel(target.channelType);
+      setChannels((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status: "disconnected", apiKeyValue: undefined, errorMessage: undefined } : c)),
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "연동 해제에 실패했습니다.";
+      setChannels((prev) => prev.map((c) => (c.id === id ? { ...c, errorMessage: message } : c)));
+    }
   };
 
-  const [logs, setLogs] = useState<SyncLog[]>(initialSyncLogs);
-  const [filter, setFilter] = useState<SyncLog["channelFilter"] | "all">("all");
+  // 네이버: 1단계 - 인가 URL/state 발급 후, 실제 네이버로 이동하는 대신 목업 로그인 모달을 띄운다.
+  const handleNaverStart = async () => {
+    if (naverStatus === "connected") {
+      try {
+        await disconnectChannel("NAVER");
+        setNaverStatus("disconnected");
+      } catch (error) {
+        setNaverErrorMessage(error instanceof Error ? error.message : "연동 해제에 실패했습니다.");
+      }
+      return;
+    }
+    setNaverErrorMessage(null);
+    try {
+      const { state } = await naverAuthorize();
+      setNaverState(state);
+      setNaverModalOpen(true);
+    } catch (error) {
+      setNaverErrorMessage(error instanceof Error ? error.message : "네이버 연동 요청에 실패했습니다.");
+    }
+  };
+
+  // 네이버: 2단계 - 모달에서 "로그인" 누르면 콜백 호출
+  const handleNaverConfirm = async () => {
+    if (!naverState) return;
+    setNaverLoading(true);
+    try {
+      const mockCode = `mock-${Date.now()}`;
+      await naverCallback(mockCode, naverState);
+      setNaverStatus("connected");
+      setNaverModalOpen(false);
+    } catch (error) {
+      setNaverErrorMessage(error instanceof Error ? error.message : "네이버 연동에 실패했습니다.");
+      setNaverModalOpen(false);
+    } finally {
+      setNaverLoading(false);
+      setNaverState(null);
+    }
+  };
+
+  // ---- 채널 연동 이력 (동기화 로그) ----
+  const [logs, setLogs] = useState<ChannelSyncLogResponse[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsError, setLogsError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "COUPANG" | "ZIGZAG" | "NAVER">("all");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1); // 화면 표시는 1-based
+  const [totalPages, setTotalPages] = useState(1);
+  const [pollingChannel, setPollingChannel] = useState<string | null>(null); // 지금 재확인 중인 채널
 
-  const filteredLogs = useMemo(
-    () => (filter === "all" ? logs : logs.filter((log) => log.channelFilter === filter)),
-    [logs, filter],
-  );
+  useEffect(() => {
+    if (view !== "history") return;
 
-  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedLogs = filteredLogs.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    (currentPage - 1) * PAGE_SIZE + PAGE_SIZE,
-  );
+    let ignore = false;
+    setLogsLoading(true);
+    setLogsError(null);
 
-  const handleFilterSelect = (value: SyncLog["channelFilter"] | "all") => {
+    getSyncLogs({
+      channelType: filter === "all" ? undefined : filter,
+      page: page - 1,
+      size: PAGE_SIZE,
+    })
+      .then((res) => {
+        if (ignore) return;
+        setLogs(res.content);
+        setTotalPages(Math.max(1, res.totalPages));
+      })
+      .catch((error) => {
+        if (ignore) return;
+        setLogsError(error instanceof Error ? error.message : "동기화 이력을 불러오지 못했습니다.");
+      })
+      .finally(() => {
+        if (!ignore) setLogsLoading(false);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [view, filter, page]);
+
+  const handleFilterSelect = (value: "all" | "COUPANG" | "ZIGZAG" | "NAVER") => {
     setFilter(value);
     setFilterOpen(false);
     setPage(1);
   };
 
-  const handleRetry = (id: string) => {
-    // TODO: 백엔드 재동기화 API 붙으면 실제 fetch 호출로 교체
-    setLogs((prev) =>
-      prev.map((log) =>
-        log.id === id
-          ? { ...log, status: "success", detail: "재시도로 동기화가 완료되었습니다." }
-          : log,
-      ),
-    );
+  // 개별 로그 재시도가 아니라, 해당 로그의 채널을 지금 다시 폴링하고 목록을 새로고침한다.
+  const handleRetry = async (channelType: string) => {
+    setPollingChannel(channelType);
+    try {
+      await pollSyncLogs(channelType as "COUPANG" | "ZIGZAG" | "NAVER");
+      const res = await getSyncLogs({
+        channelType: filter === "all" ? undefined : filter,
+        page: page - 1,
+        size: PAGE_SIZE,
+      });
+      setLogs(res.content);
+      setTotalPages(Math.max(1, res.totalPages));
+    } catch (error) {
+      setLogsError(error instanceof Error ? error.message : "재확인에 실패했습니다.");
+    } finally {
+      setPollingChannel(null);
+    }
   };
 
   return (
     <div className="flex min-h-screen bg-white">
-
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
         <header className="flex h-[52px] items-center justify-between border-b border-slate-200 bg-white px-6">
           <div className="flex items-center gap-1.5 text-xs">
@@ -186,7 +320,7 @@ export default function ChannelPage() {
                 onResetAfterError={() => handleRetryReset(channels[0].id)}
               />
 
-              {/* Naver — OAuth flow */}
+              {/* Naver — mock OAuth flow */}
               <div className="relative flex flex-col rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_1px_2px_-1px_rgba(0,0,0,0.1),0_1px_3px_rgba(0,0,0,0.1)]">
                 <div className="flex items-start justify-between pb-6">
                   <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-2xl font-black text-emerald-500">
@@ -224,13 +358,13 @@ export default function ChannelPage() {
                       언제든 연동 해제 가능
                     </li>
                   </ul>
+                  {naverErrorMessage && (
+                    <p className="text-[12px] font-medium text-red-500">{naverErrorMessage}</p>
+                  )}
                 </div>
 
                 <button
-                  onClick={() => {
-                    // TODO: 실제로는 네이버 OAuth 인가 URL로 리다이렉트
-                    setNaverStatus((s) => (s === "disconnected" ? "connected" : "disconnected"));
-                  }}
+                  onClick={handleNaverStart}
                   className={
                     naverStatus === "disconnected"
                       ? "mt-8 flex items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3.5 text-sm font-bold text-white hover:bg-indigo-600"
@@ -329,68 +463,88 @@ export default function ChannelPage() {
 
               {/* Table rows */}
               <div>
-                {pagedLogs.length === 0 && (
+                {logsLoading && (
+                  <div className="px-6 py-10 text-center text-[12px] text-slate-400">불러오는 중...</div>
+                )}
+                {!logsLoading && logsError && (
+                  <div className="px-6 py-10 text-center text-[12px] text-red-500">{logsError}</div>
+                )}
+                {!logsLoading && !logsError && logs.length === 0 && (
                   <div className="px-6 py-10 text-center text-[12px] text-slate-400">
                     해당 채널의 동기화 이력이 없습니다.
                   </div>
                 )}
-                {pagedLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className={
-                      "flex items-center border-b border-slate-100 px-6 last:border-b-0 " +
-                      (log.status === "failed" ? "bg-red-50/40" : "")
-                    }
-                  >
-                    <div className="flex w-[220px] shrink-0 items-center gap-2.5 py-4">
-                      <span
-                        className={`flex h-7 w-7 items-center justify-center rounded-md ${log.iconBg} text-xs font-bold ${log.iconColor}`}
-                      >
-                        {log.initial}
-                      </span>
-                      <span className="text-[11px] font-semibold text-slate-900">{log.channel}</span>
-                    </div>
-                    <div className="w-[175px] shrink-0 py-4 text-[11px] text-slate-500">
-                      {log.datetime}
-                    </div>
-                    <div className="w-[130px] shrink-0 py-4">
-                      {log.status === "success" ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-600">
-                          성공
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-red-50 px-2 py-1 text-[9px] font-bold text-red-600">
-                          실패
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-1 items-center justify-between gap-3 py-4">
-                      <span
+                {!logsLoading &&
+                  !logsError &&
+                  logs.map((log) => {
+                    const display = CHANNEL_DISPLAY[log.channelType] ?? {
+                      label: log.channelType,
+                      initial: log.channelType.charAt(0),
+                      iconBg: "bg-slate-50",
+                      iconColor: "text-slate-500",
+                    };
+                    const isFailed = log.status === "FAILED";
+                    const detail = isFailed
+                      ? log.failReason ?? "동기화에 실패했습니다."
+                      : `신규 ${log.syncedCount ?? 0}건 반영 완료`;
+
+                    return (
+                      <div
+                        key={log.syncLogKey}
                         className={
-                          "text-[11px] " + (log.status === "failed" ? "text-red-600" : "text-slate-600")
+                          "flex items-center border-b border-slate-100 px-6 last:border-b-0 " +
+                          (isFailed ? "bg-red-50/40" : "")
                         }
                       >
-                        {log.detail}
-                      </span>
-                      {log.status === "failed" && (
-                        <button
-                          onClick={() => handleRetry(log.id)}
-                          className="flex shrink-0 items-center gap-1 rounded border border-indigo-500 px-2.5 py-1 text-[9px] font-bold text-indigo-500 hover:bg-indigo-50"
-                        >
-                          <RotateCcw className="h-2.5 w-2.5" />
-                          다시 시도
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                        <div className="flex w-[220px] shrink-0 items-center gap-2.5 py-4">
+                          <span
+                            className={`flex h-7 w-7 items-center justify-center rounded-md ${display.iconBg} text-xs font-bold ${display.iconColor}`}
+                          >
+                            {display.initial}
+                          </span>
+                          <span className="text-[11px] font-semibold text-slate-900">
+                            {display.label} 동기화
+                          </span>
+                        </div>
+                        <div className="w-[175px] shrink-0 py-4 text-[11px] text-slate-500">
+                          {formatDateTime(log.syncedAt)}
+                        </div>
+                        <div className="w-[130px] shrink-0 py-4">
+                          {log.status === "SUCCESS" ? (
+                            <span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-bold text-emerald-600">
+                              성공
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-red-50 px-2 py-1 text-[9px] font-bold text-red-600">
+                              실패
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-1 items-center justify-between gap-3 py-4">
+                          <span className={"text-[11px] " + (isFailed ? "text-red-600" : "text-slate-600")}>
+                            {detail}
+                          </span>
+                          {isFailed && (
+                            <button
+                              onClick={() => handleRetry(log.channelType)}
+                              disabled={pollingChannel === log.channelType}
+                              className="flex shrink-0 items-center gap-1 rounded border border-indigo-500 px-2.5 py-1 text-[9px] font-bold text-indigo-500 hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <RotateCcw className="h-2.5 w-2.5" />
+                              {pollingChannel === log.channelType ? "확인 중..." : "다시 시도"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
 
               {/* Pagination */}
               <div className="flex items-center justify-center gap-1.5 border-t border-slate-100 py-5">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
+                  disabled={page === 1}
                   className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   ‹
@@ -401,7 +555,7 @@ export default function ChannelPage() {
                     onClick={() => setPage(p)}
                     className={
                       "flex h-6 w-6 items-center justify-center rounded-md text-[11px] font-medium " +
-                      (p === currentPage
+                      (p === page
                         ? "bg-indigo-500 font-bold text-white"
                         : "text-slate-600 hover:bg-slate-50")
                     }
@@ -411,7 +565,7 @@ export default function ChannelPage() {
                 ))}
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
+                  disabled={page === totalPages}
                   className="flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 text-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   ›
@@ -448,7 +602,10 @@ export default function ChannelPage() {
       <ChannelErrorModal
         open={errorModalChannel !== null}
         reason="인증 오류 / 권한 부족"
-        description="입력하신 API 키의 인증 정보가 유효하지 않거나 권한이 부족하여 연결에 실패했습니다."
+        description={
+          channels.find((c) => c.name === errorModalChannel)?.errorMessage ??
+          "입력하신 API 키의 인증 정보가 유효하지 않거나 권한이 부족하여 연결에 실패했습니다."
+        }
         onRetry={() => {
           const target = channels.find((c) => c.name === errorModalChannel);
           if (target) handleRetryReset(target.id);
@@ -458,6 +615,16 @@ export default function ChannelPage() {
         onContact={() => {
           router.push("/cs?view=inquiry");
           setErrorModalChannel(null);
+        }}
+      />
+
+      <NaverMockLoginModal
+        open={naverModalOpen}
+        loading={naverLoading}
+        onConfirm={handleNaverConfirm}
+        onClose={() => {
+          setNaverModalOpen(false);
+          setNaverState(null);
         }}
       />
     </div>
@@ -538,7 +705,11 @@ function ChannelCard({
                 type={revealKey ? "text" : "password"}
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
-                placeholder="API 키를 입력해주세요."
+                placeholder={
+                  channel.channelType === "COUPANG"
+                    ? "cp_live_로 시작하는 API 키를 입력해주세요."
+                    : "zg_live_로 시작하는 API 키를 입력해주세요."
+                }
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-14 text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
               {apiKeyInput.length > 0 && (
@@ -573,7 +744,7 @@ function ChannelCard({
                   }
                 >
                   <p className="text-[13px]">
-                    {revealKey ? apiKeyInput || channel.apiKeyValue : channel.apiKeyValue}
+                    {isError ? channel.errorMessage : revealKey ? apiKeyInput || channel.apiKeyValue : channel.apiKeyValue}
                   </p>
                 </div>
                 {!isError && (
@@ -602,8 +773,7 @@ function ChannelCard({
               <div className="flex items-start gap-2.5 rounded-xl border border-red-100 bg-red-50 p-4">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
                 <p className="text-[13px] leading-relaxed text-red-700">
-                  인증 오류가 발생했습니다. API 키가 만료되었거나 잘못되었습니다. 다시
-                  확인해주세요.
+                  {channel.errorMessage ?? "인증 오류가 발생했습니다. API 키가 만료되었거나 잘못되었습니다. 다시 확인해주세요."}
                 </p>
               </div>
             )}

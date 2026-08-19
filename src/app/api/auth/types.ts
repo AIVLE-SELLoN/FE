@@ -14,3 +14,17 @@ export const loginResponseSchema = z.object({
 });
 
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+
+
+export const verificationTokenSchema = z.object({
+  verificationToken: z.string(),
+});
+export type VerificationTokenResponse = z.infer<typeof verificationTokenSchema>;
+
+export const signupResponseSchema = z.object({
+  userId: z.number(),
+  email: z.string(),
+  role: z.enum(['ROOT', 'MEMBER', 'ADMIN']),
+  companyKey: z.string().nullable(),
+});
+export type SignupResponse = z.infer<typeof signupResponseSchema>;
