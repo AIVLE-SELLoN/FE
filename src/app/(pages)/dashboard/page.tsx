@@ -7,13 +7,19 @@ import NotificationBell from "@/components/common/NotificationBell";
 import { getDashboard } from "@/app/api/dashboard";
 import type { ChannelSummaryItem, ActionSummaryItem, RecentAlertItem } from "@/app/api/dashboard/types";
 import { ApiError } from "@/app/api/client";
+import { CHANNEL_COLORS, CHANNEL_LABELS, type ChannelKey } from "@/lib/channelColors";
 
-// 채널 타입(백엔드 AlertChannel enum) → 화면 표시용 점 색상
-const CHANNEL_DOT_COLOR: Record<string, string> = {
-  COUPANG: "#FF5722",
-  NAVER: "#03C75A",
-  ZIGZAG: "#FF6699",
-};
+// 채널 색상은 공용 소스(@/lib/channelColors)만 참조 — 백엔드 channel 값("COUPANG" 등 대문자)을
+// 공용 모듈의 소문자 키로 변환해서 연결한다. (channelCompare 페이지와 동일한 패턴)
+function toChannelKey(channel: string): ChannelKey | null {
+  const key = channel.toLowerCase();
+  return key in CHANNEL_LABELS ? (key as ChannelKey) : null;
+}
+
+function channelDotColor(channel: string): string {
+  const key = toChannelKey(channel);
+  return key ? CHANNEL_COLORS[key] : "#9A9AA5";
+}
 
 function formatCount(n: number) {
   return `${n.toLocaleString()}건`;
@@ -98,10 +104,11 @@ export default function DashboardPage() {
                   </span>
                   <div className="flex flex-col gap-2">
                     <p className="text-xl font-bold text-indigo-500">
-                      미확인 이상 이벤트{" "}
+                      아직 확인하지 않은 이상 징후가{" "}
                       <Link href="/alert" className="underline">
                         {unreadCount}건
-                      </Link>
+                      </Link>{" "}
+                      있어요.
                     </p>
                   </div>
                 </div>
@@ -141,7 +148,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2">
                         <span
                           className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: CHANNEL_DOT_COLOR[ch.channel] ?? "#9A9AA5" }}
+                          style={{ backgroundColor: channelDotColor(ch.channel) }}
                         />
                         <span className="text-sm font-bold text-slate-900">{ch.channelName}</span>
                         {/* 채널별 미해결 이상 건수 배지는 백엔드 집계 API가 아직 없어서 뺐어요. */}
@@ -231,7 +238,7 @@ export default function DashboardPage() {
                           <div className="flex w-[42%] items-center gap-3">
                             <span
                               className="h-10 w-10 shrink-0 rounded-lg"
-                              style={{ backgroundColor: (CHANNEL_DOT_COLOR[a.channel] ?? "#9A9AA5") + "22" }}
+                              style={{ backgroundColor: channelDotColor(a.channel) + "22" }}
                             />
                             <div>
                               <p className="text-sm font-bold text-slate-900">{a.productName ?? a.productGroupId ?? "-"}</p>

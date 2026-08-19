@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import NotificationBell from "@/components/common/NotificationBell";
 import {
+  CHANNEL_COLORS,
+  CHANNEL_INITIALS,
+  CHANNEL_LABELS,
+  CHANNEL_TINTS,
+  type ChannelKey,
+} from "@/lib/channelColors";
+import {
   LineChart,
   Line,
   XAxis,
@@ -30,23 +37,52 @@ import type {
   ChannelMonthlyItem,
 } from "@/app/api/channel/comparison/types";
 
-// 채널 타입(백엔드 문자열) → 화면 표시용 메타데이터
-const CHANNEL_META: Record<string, { label: string; initial: string; color: string; iconBg: string; iconText: string }> = {
-  COUPANG: { label: "쿠팡", initial: "C", color: "#D9720B", iconBg: "#FFD8C2", iconText: "#C24A0F" },
-  NAVER: { label: "네이버", initial: "N", color: "#1F9254", iconBg: "#D6F5D6", iconText: "#1F9254" },
-  ZIGZAG: { label: "지그재그", initial: "Z", color: "#9A9AA5", iconBg: "#ECECF0", iconText: "#9A9AA5" },
-};
-
-function getMeta(channelType: string) {
-  return CHANNEL_META[channelType] ?? { label: channelType, initial: channelType[0] ?? "?", color: "#9A9AA5", iconBg: "#ECECF0", iconText: "#9A9AA5" };
+// 채널 색상/라벨은 공용 소스(@/lib/channelColors)만 참조 — 페이지별로 하드코딩하지 않음.
+// 백엔드 channelType은 "COUPANG"처럼 대문자로 오고, 공용 모듈은 "coupang"처럼 소문자 키를 쓰기 때문에
+// 여기서만 소문자로 변환해서 연결한다.
+function toChannelKey(channelType: string): ChannelKey | null {
+  const key = channelType.toLowerCase();
+  return key in CHANNEL_LABELS ? (key as ChannelKey) : null;
 }
 
-function SectionCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+function getMeta(channelType: string) {
+  const key = toChannelKey(channelType);
+  if (key) {
+    return {
+      label: CHANNEL_LABELS[key],
+      initial: CHANNEL_INITIALS[key],
+      color: CHANNEL_COLORS[key],
+      iconBg: CHANNEL_TINTS[key].bg,
+      iconText: CHANNEL_TINTS[key].fg,
+    };
+  }
+  // 공용 모듈에 없는 채널(향후 확장 대비)은 중립 회색으로 대체
+  return {
+    label: channelType,
+    initial: channelType[0] ?? "?",
+    color: "#9A9AA5",
+    iconBg: "#ECECF0",
+    iconText: "#9A9AA5",
+  };
+}
+
+function SectionCard({
+  title,
+  subtitle,
+  children,
+  contentClassName = "pt-6",
+}: {
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+  /** 제목과 본문 사이 간격. 차트처럼 자체 여백을 가진 내용은 줄여서 넘기면 돼요 */
+  contentClassName?: string;
+}) {
   return (
     <div className="rounded-2xl border border-[#EDEDED] bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
       <h2 className="text-xl font-bold text-[#17171C]">{title}</h2>
       <p className="pt-1 text-[12px] text-[#A5A5AF]">{subtitle}</p>
-      <div className="pt-6">{children}</div>
+      <div className={contentClassName}>{children}</div>
     </div>
   );
 }
@@ -329,10 +365,14 @@ export default function ChannelComparisonPage() {
                 </div>
               </SectionCard>
 
-              <SectionCard title="문의 유형 레이더" subtitle="채널간 유형 분포 전체 비교">
+              <SectionCard
+                title="문의 유형 레이더"
+                subtitle="채널간 유형 분포 전체 비교"
+                contentClassName="pt-1"
+              >
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarRows}>
+                    <RadarChart data={radarRows} outerRadius="75%">
                       <PolarGrid stroke="#F0F0F3" />
                       <PolarAngleAxis dataKey="type" tick={{ fontSize: 11, fill: "#7A7A85" }} />
                       {channels.map((c) => {
@@ -348,7 +388,7 @@ export default function ChannelComparisonPage() {
                           />
                         );
                       })}
-                      <Legend />
+                      <Legend iconType="square" iconSize={10} wrapperStyle={{ paddingTop: 48 }} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
