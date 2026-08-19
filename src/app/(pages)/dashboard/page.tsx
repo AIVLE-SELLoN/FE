@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Bell, ArrowRight, Settings2 } from "lucide-react";
+import { Bell, ArrowRight } from "lucide-react";
 import NotificationBell from "@/components/common/NotificationBell";
+import { CHANNEL_COLORS, CHANNEL_LABELS, type ChannelKey } from "@/lib/channelColors";
 
 // ── 목데이터 — 실제로는 대시보드 요약 API에서 받아와야 해요 ──────────────
 
@@ -12,39 +12,24 @@ const unresolvedSummary = {
   total: 7,
 };
 
-const channelSummary = [
-  { key: "coupang", name: "쿠팡", dotColor: "#FF5722", issueCount: 3, cs: "124건", orders: "1,892건", rating: "4.6" },
-  { key: "naver", name: "네이버", dotColor: "#03C75A", issueCount: 2, cs: "88건", orders: "941건", rating: "4.4" },
-  { key: "zigzag", name: "지그재그", dotColor: "#FF6699", issueCount: 2, cs: "219건", orders: "2,410건", rating: "4.9" },
+const channelSummary: {
+  key: ChannelKey;
+  issueCount: number;
+  cs: string;
+  orders: string;
+  rating: string;
+}[] = [
+  { key: "coupang", issueCount: 3, cs: "124건", orders: "1,892건", rating: "4.6" },
+  { key: "naver", issueCount: 2, cs: "88건", orders: "941건", rating: "4.4" },
+  { key: "zigzag", issueCount: 2, cs: "219건", orders: "2,410건", rating: "4.9" },
 ];
 
-// 채널별 이상 유형 순위 — 쿠팡 기준 원본 수치, 나머지 채널은 데모용 추정치예요.
-const issueTypesByChannel: Record<string, { name: string; value: number; color: string }[]> = {
-  쿠팡: [
-    { name: "색상", value: 42, color: "#6366F1" },
-    { name: "사이즈", value: 28, color: "#C7C7CF" },
-    { name: "오배송", value: 19, color: "#C7C7CF" },
-    { name: "소재", value: 11, color: "#C7C7CF" },
-    { name: "파손", value: 7, color: "#C7C7CF" },
-    { name: "기타", value: 4, color: "#C7C7CF" },
-  ],
-  네이버: [
-    { name: "색상", value: 21, color: "#6366F1" },
-    { name: "배송", value: 33, color: "#C7C7CF" },
-    { name: "품질", value: 14, color: "#C7C7CF" },
-    { name: "사이즈", value: 9, color: "#C7C7CF" },
-    { name: "오배송", value: 5, color: "#C7C7CF" },
-    { name: "기타", value: 3, color: "#C7C7CF" },
-  ],
-  지그재그: [
-    { name: "배송", value: 15, color: "#6366F1" },
-    { name: "색상", value: 9, color: "#C7C7CF" },
-    { name: "사이즈", value: 7, color: "#C7C7CF" },
-    { name: "품질", value: 4, color: "#C7C7CF" },
-    { name: "오배송", value: 3, color: "#C7C7CF" },
-    { name: "기타", value: 2, color: "#C7C7CF" },
-  ],
-};
+// 조치 유형별 건수 — 전체 채널 합산 기준. 유형 값은 아직 확정된 enum이 아니라 시안 기준 목데이터예요.
+const actionTypeSummary = [
+  { key: "suggestion", name: "개선안 생성", count: 3 },
+  { key: "product", name: "상품 자체 점검 권장", count: 2 },
+  { key: "logistics", name: "물류 점검 권장", count: 1 },
+];
 
 const recentAlerts = [
   {
@@ -78,8 +63,7 @@ const recentAlerts = [
 ];
 
 export default function DashboardPage() {
-  const [activeChannel, setActiveChannel] = useState<"쿠팡" | "네이버" | "지그재그">("쿠팡");
-  const donutData = issueTypesByChannel[activeChannel];
+  const maxActionCount = Math.max(...actionTypeSummary.map((a) => a.count));
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -107,10 +91,11 @@ export default function DashboardPage() {
                   </span>
                   <div className="flex flex-col gap-2">
                     <p className="text-xl font-bold text-indigo-500">
-                      미확인 이상 이벤트{" "}
+                      아직 확인하지 않은 이상 징후가{" "}
                       <Link href="/alert" className="underline">
                         {unresolvedSummary.total}건
-                      </Link>
+                      </Link>{" "}
+                      있어요.
                     </p>
                   </div>
                 </div>
@@ -142,8 +127,8 @@ export default function DashboardPage() {
                     className="rounded-[20px] border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(0,0,0,0.07)]"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: ch.dotColor }} />
-                      <span className="text-sm font-bold text-slate-900">{ch.name}</span>
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: CHANNEL_COLORS[ch.key] }} />
+                      <span className="text-sm font-bold text-slate-900">{CHANNEL_LABELS[ch.key]}</span>
                       <span className="ml-auto rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-bold text-rose-600">
                         이상 {ch.issueCount}건
                       </span>
@@ -176,87 +161,26 @@ export default function DashboardPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-[471px_1fr]">
-                {/* Bubble chart */}
-                <div className="rounded-[20px] border border-slate-100 bg-white p-4.5 shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
-                  <div className="flex items-start justify-between pb-1">
-                    <div>
-                      <p className="text-[13px] font-bold text-slate-900">채널별 이상 유형 순위</p>
-                      <p className="text-[11px] text-slate-400">전체 상품 합산 기준</p>
-                    </div>
-                    <button className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 text-slate-500 hover:bg-slate-100">
-                      <Settings2 className="h-3.5 w-3.5" />
-                    </button>
+                {/* 조치 유형별 건수 — 막대 길이는 최대 건수 대비 비율로 그려요 */}
+                <div className="overflow-hidden rounded-[24px] border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)]">
+                  <div className="border-b border-slate-100 px-8 py-6">
+                    <h3 className="text-lg font-bold text-slate-900">조치 유형별 건수</h3>
                   </div>
 
-                  <div className="flex gap-1.5 pt-2 pb-1">
-                    {(["쿠팡", "네이버", "지그재그"] as const).map((ch) => (
-                      <button
-                        key={ch}
-                        onClick={() => setActiveChannel(ch)}
-                        className={
-                          "rounded-full px-3 py-1 text-xs font-bold " +
-                          (activeChannel === ch
-                            ? "bg-indigo-100 text-indigo-500"
-                            : "text-slate-400 hover:bg-slate-50")
-                        }
-                      >
-                        {ch}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* 버블 크기는 sqrt(value)에 비례하게 계산해서 면적이 값에 비례하도록 했어요 */}
-                  <div className="flex min-h-[300px] flex-wrap items-center justify-center gap-3 py-6">
-                    {(() => {
-                      const maxValue = Math.max(...donutData.map((d) => d.value));
-                      const maxDiameter = 176;
-                      const minDiameter = 56;
-                      return donutData.map((d, i) => {
-                        const ratio = Math.sqrt(d.value / maxValue);
-                        const diameter = Math.max(minDiameter, Math.round(maxDiameter * ratio));
-                        const isTop = i === 0;
-                        return (
+                  <div className="flex flex-col gap-6 px-8 py-7">
+                    {actionTypeSummary.map((a) => (
+                      <div key={a.key}>
+                        <div className="flex items-baseline justify-between pb-2.5">
+                          <span className="text-sm font-bold text-slate-900">{a.name}</span>
+                          <span className="text-sm font-bold text-slate-900">{a.count}건</span>
+                        </div>
+                        <div className="h-3 overflow-hidden rounded-full bg-slate-100">
                           <div
-                            key={d.name}
-                            className="flex flex-col items-center justify-center rounded-full transition-all"
-                            style={{
-                              width: diameter,
-                              height: diameter,
-                              backgroundColor: isTop ? "#6366F1" : "#F3F4F6",
-                            }}
-                          >
-                            <span
-                              className="font-bold"
-                              style={{
-                                fontSize: Math.max(12, diameter * 0.16),
-                                color: isTop ? "#FFFFFF" : "#101828",
-                              }}
-                            >
-                              {d.value}건
-                            </span>
-                            <span
-                              style={{
-                                fontSize: Math.max(10, diameter * 0.12),
-                                color: isTop ? "rgba(255,255,255,0.75)" : "#99A1AF",
-                              }}
-                            >
-                              {d.name}
-                            </span>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-
-                  <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-2">
-                    {donutData.map((d, i) => (
-                      <span key={d.name} className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <span
-                          className="h-1.5 w-1.5 rounded-full"
-                          style={{ backgroundColor: i === 0 ? "#6366F1" : "#C7C7CF" }}
-                        />
-                        {d.name} {d.value}건
-                      </span>
+                            className="h-full rounded-full bg-indigo-500"
+                            style={{ width: `${(a.count / maxActionCount) * 100}%` }}
+                          />
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
