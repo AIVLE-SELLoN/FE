@@ -100,7 +100,7 @@ export default function Home() {
                   무료로 채널 연결하기
                 </Link>
                 <Link
-                  href="/cs?view=inquiry"
+                  href="/faq"
                   className="rounded-2xl border border-slate-200 bg-white px-8 py-4 text-base font-bold tracking-tight text-[#1A1F27] transition-colors hover:bg-slate-50 sm:text-lg"
                 >
                   서비스 소개서 받기
@@ -361,7 +361,7 @@ export default function Home() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/cs?view=inquiry"
+                href="/faq"
                 className="rounded-2xl border border-slate-200 bg-white px-10 py-5 text-lg font-bold text-[#1A1F27] transition-colors hover:bg-slate-50"
               >
                 도입 문의하기

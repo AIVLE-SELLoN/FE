@@ -242,9 +242,9 @@ export default function Sidebar() {
   return (
     <aside className="sticky top-0 flex h-screen w-[260px] shrink-0 flex-col border-r border-slate-200 bg-white">
       {/* Logo */}
-      <div className="flex items-center gap-2 p-8">
-        <Image src="/logo3.png" alt="SELLoN" width={150} height={38} />
-      </div>
+      <Link href="/" className="flex items-center gap-2 p-8">
+        <Image src="/logo3.png" alt="SELLoN" width={150} height={32} priority />
+      </Link>
 
       {/* Search */}
       <div className="px-4 pb-6">

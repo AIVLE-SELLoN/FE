@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { CheckCircle, Mail, X } from "lucide-react";
 import { findId, findPassword } from "@/app/api/auth";
 import { ApiError } from "@/app/api/client";
@@ -315,6 +316,9 @@ export default function FindAccountPage() {
 
       {/* Footer */}
       <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
+        <Link href="/" className="mb-1">
+          <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+        </Link>
         <div className="flex items-center gap-5">
           {footerLinks.map((link) => (
             <Link
