@@ -191,7 +191,15 @@ export default function ChannelComparisonPage() {
   }, [channels, monthly]);
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-slate-400">불러오는 중...</div>;
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-white">
+        <div className="h-[60px] w-[60px] animate-spin rounded-full border-[3.89px] border-[#E4E4E7] border-t-indigo-500" />
+        <div className="text-center">
+          <p className="text-[28px] font-bold text-[#18181B]">불러오는 중...</p>
+          <p className="pt-2 text-[13px] text-[#71717A]">잠시만 기다려 주세요. 채널 비교 데이터를 불러오는 중입니다</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {

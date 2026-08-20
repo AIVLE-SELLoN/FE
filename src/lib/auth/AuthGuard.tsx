@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useAuthStore } from "@/store/useAuthStore";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/find-account"];
+const PUBLIC_PATHS = ["/login", "/signup", "/find-account", "/faq", "/terms", "/privacy"];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();

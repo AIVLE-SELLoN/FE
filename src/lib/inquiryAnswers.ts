@@ -33,3 +33,14 @@ export function saveAnswer(id: string, answer: StoredAnswer) {
     // 저장 실패해도 화면 상태는 그대로 유지
   }
 }
+
+export function removeAnswer(id: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const all = getAllAnswers();
+    delete all[id];
+    window.localStorage.setItem(ANSWERS_STORAGE_KEY, JSON.stringify(all));
+  } catch {
+    // 삭제 실패해도 화면 상태는 그대로 유지
+  }
+}

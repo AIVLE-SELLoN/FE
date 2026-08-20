@@ -19,6 +19,8 @@ export const csInquirySchema = z.object({
   attachmentUrl: z.string().nullable(),
   inquireAnswer: z.string().nullable(),
   inquiryStatus: inquiryStatusSchema,
+  authorName: z.string(),
+  createdAt: z.string(),
 });
 export type CsInquiry = z.infer<typeof csInquirySchema>;
 
@@ -49,3 +51,11 @@ export const INQUIRE_TYPE_STYLE: Record<InquireType, { bg: string; text: string 
   ANOMALY_DETECTION: { bg: 'bg-red-50', text: 'text-red-500' },
   IMPROVEMENT_PROPOSAL: { bg: 'bg-orange-50', text: 'text-amber-600' },
 };
+
+export function formatDateTime(iso: string) {
+  return iso.replace('T', ' ').slice(0, 16);
+}
+
+export function formatDate(iso: string) {
+  return iso.slice(0, 10);
+}
