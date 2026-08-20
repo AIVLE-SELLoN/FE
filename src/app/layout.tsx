@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "@/lib/auth/AuthContext";
+import { AuthGuard } from "@/lib/auth/AuthGuard";
 
 export const metadata: Metadata = {
   title: "SELLoN",
@@ -13,7 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className="h-full antialiased">
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider>
+          <AuthGuard>{children}</AuthGuard>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

@@ -1,3 +1,4 @@
+import { useAuthStore } from '@/store/useAuthStore';
 import type { ApiErrorPayload, ApiResponse } from './types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -26,7 +27,7 @@ export class ApiError extends Error {
 
 // TODO: 로그인 붙으면 여기서 토큰 읽어오기 (localStorage/store 등)
 function getAccessToken(): string | null {
-  return null;
+  return useAuthStore.getState().accessToken;
 }
 
 function buildUrl(path: string, params?: QueryParams) {
@@ -97,7 +98,7 @@ async function parseApiResponse<T>(response: Response): Promise<T> {
     });
   }
 
-  if (!response.ok || payload.code !== 'SUCCESS') {
+  if (!response.ok) {
     throw new ApiError({
       status: payload.status ?? response.status,
       code: payload.code ?? 'UNKNOWN_ERROR',
@@ -130,6 +131,30 @@ async function request<T>(path: string, options: ApiRequestOptions = {}) {
   return parseApiResponse<T>(response);
 }
 
+async function requestRaw<T>(path: string, options: ApiRequestOptions = {}) {
+  const { params, body, headers, ...init } = options;
+  const url = buildUrl(path, params);
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...init,
+      body: buildBody(body),
+      headers: buildHeaders(body, headers),
+    });
+  } catch {
+    throw new ApiError({
+      status: 0,
+      code: 'NETWORK_ERROR',
+      message: '네트워크 오류로 요청을 완료하지 못했습니다.',
+    });
+  }
+
+  const data = await parseApiResponse<T>(response);
+  return { data, headers: response.headers };
+}
+
+
 export const api = {
   get<T>(path: string, options?: ApiMethodOptions) {
     return request<T>(path, { ...options, method: 'GET' });
@@ -145,5 +170,8 @@ export const api = {
   },
   delete<T>(path: string, options?: ApiMethodOptions) {
     return request<T>(path, { ...options, method: 'DELETE' });
+  },
+  postRaw<T>(path: string, body?: unknown, options?: ApiMethodOptions) {
+    return requestRaw<T>(path, { ...options, method: 'POST', body });
   },
 };
