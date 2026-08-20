@@ -384,7 +384,7 @@ export default function ProductMappingPage() {
                   <input
                     value={listQuery}
                     onChange={(e) => setListQuery(e.target.value)}
-                    placeholder="상품명, SKU 또는 채널명(쿠팡/지그재그/네이버) 검색"
+                    placeholder="상품명, SKU 또는 채널명 검색"
                     className="w-full bg-transparent text-[13px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
                   />
                 </div>

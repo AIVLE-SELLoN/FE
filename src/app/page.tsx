@@ -11,6 +11,7 @@ import Link from "next/link";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroDashboardMock from "@/components/landing/HeroDashboardMock";
+import Reveal from "@/components/common/Reveal";
 
 const stats = [
   { value: "244+", label: "연동된 브랜드 계정" },
@@ -67,7 +68,7 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-b from-white to-[#F8F9FC]">
         <div className="mx-auto grid max-w-[1512px] grid-cols-1 items-center gap-16 px-6 py-20 lg:grid-cols-2 lg:gap-12 lg:px-[120px] lg:py-24">
           <div className="flex flex-col items-start gap-10">
-            <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5">
+            <span className="animate-fade-up inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5">
               <span className="h-2 w-2 rounded-full bg-indigo-500" />
               <span className="text-[13px] font-bold uppercase tracking-wide text-indigo-500">
                 쿠팡 · 네이버 · 지그재그 통합 모니터링
@@ -75,14 +76,14 @@ export default function Home() {
             </span>
 
             <div className="flex flex-col gap-4">
-              <h1 className="text-4xl font-extrabold leading-[1.35] tracking-tight text-[#1A1F27] sm:text-5xl">
+              <h1 className="animate-fade-up text-4xl font-extrabold leading-[1.35] tracking-tight text-[#1A1F27] [animation-delay:100ms] sm:text-5xl">
                 리뷰로 터지기 전에,
                 <br />
                 <span className="text-indigo-500">CS 이상 신호</span>를
                 <br />
                 먼저 짚어드립니다
               </h1>
-              <p className="pt-2 text-base leading-relaxed text-slate-500 sm:text-lg">
+              <p className="animate-fade-up pt-2 text-base leading-relaxed text-slate-500 [animation-delay:200ms] sm:text-lg">
                 채널마다 흩어진 문의·반품 데이터를 한 화면에 모으고, 평소와
                 다른 패턴이 보이면 원인 가설과 대응안까지 근거 문서와 함께
                 제시합니다. 확인은 셀러가, 판단의 무게는 SELLoN이 나눠
@@ -90,7 +91,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="flex flex-col items-start gap-4">
+            <div className="animate-fade-up flex flex-col items-start gap-4 [animation-delay:300ms]">
               <div className="flex flex-wrap items-center gap-4">
                 <Link
                   href="/signup"
@@ -124,7 +125,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex justify-center lg:justify-end">
+          <div className="animate-fade-up flex justify-center [animation-delay:150ms] lg:justify-end">
             <HeroDashboardMock />
           </div>
         </div>
@@ -132,7 +133,7 @@ export default function Home() {
 
       {/* Stats */}
       <section className="border-y border-slate-100 bg-white">
-        <div className="mx-auto grid max-w-[1512px] grid-cols-2 px-6 py-14 sm:grid-cols-4 lg:px-[120px]">
+        <Reveal className="mx-auto grid max-w-[1512px] grid-cols-2 px-6 py-14 sm:grid-cols-4 lg:px-[120px]">
           {stats.map((stat, i) => (
             <div
               key={stat.label}
@@ -155,12 +156,12 @@ export default function Home() {
               </p>
             </div>
           ))}
-        </div>
+        </Reveal>
       </section>
 
       {/* Features */}
       <section id="features" className="mx-auto max-w-[1512px] px-6 py-24 lg:px-[120px]">
-        <div className="flex flex-col gap-4">
+        <Reveal className="flex flex-col gap-4">
           <span className="inline-flex w-fit items-center rounded-md bg-indigo-50 px-3 py-1">
             <span className="text-[13px] font-bold text-indigo-500">
               핵심 기능
@@ -169,10 +170,10 @@ export default function Home() {
           <h2 className="whitespace-nowrap text-3xl font-extrabold leading-tight tracking-tight text-[#1A1F27] sm:text-4xl">
             감지부터 개선안 승인까지, 한 흐름으로 이어집니다
           </h2>
-        </div>
+        </Reveal>
 
         <div className="mt-16 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="flex flex-col gap-4 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] lg:row-span-2">
+          <Reveal className="flex flex-col gap-4 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)] lg:row-span-2">
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50">
               <Plug className="h-5 w-5 text-indigo-500" />
             </span>
@@ -213,9 +214,12 @@ export default function Home() {
                 ))}
               </div>
             </div>
-          </div>
+          </Reveal>
 
-          <div className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 pb-12 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
+          <Reveal
+            delay={60}
+            className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 pb-12 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]"
+          >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
               <Activity className="h-[18px] w-[18px] text-emerald-500" />
             </span>
@@ -226,9 +230,12 @@ export default function Home() {
               트렌드·계절성을 분리한 잔차 z-score로 진짜 이상만 골라내고,
               데이터가 부족한 상품은 이동평균 방식으로 자동 전환합니다.
             </p>
-          </div>
+          </Reveal>
 
-          <div className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 pb-12 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
+          <Reveal
+            delay={120}
+            className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 pb-12 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]"
+          >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50">
               <GitCompareArrows className="h-[18px] w-[18px] text-red-500" />
             </span>
@@ -239,9 +246,12 @@ export default function Home() {
               같은 상품이라도 채널마다 다른 CS 분포를 비교해, 채널 문제인지
               상품 자체 문제인지 편중형·전역형으로 구분해 보여줍니다.
             </p>
-          </div>
+          </Reveal>
 
-          <div className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
+          <Reveal
+            delay={60}
+            className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]"
+          >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
               <FileSearch className="h-[18px] w-[18px] text-amber-500" />
             </span>
@@ -253,9 +263,12 @@ export default function Home() {
               세우고, 모든 핵심 주장에 인용 근거를 붙여 확인할 수 있게
               합니다.
             </p>
-          </div>
+          </Reveal>
 
-          <div className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
+          <Reveal
+            delay={120}
+            className="flex flex-col gap-3 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]"
+          >
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50">
               <ShieldCheck className="h-[18px] w-[18px] text-violet-500" />
             </span>
@@ -266,14 +279,14 @@ export default function Home() {
               개선안은 셀러의 승인 후에만 적용됩니다. 반려하면 사유가 다음
               분석에 반영되어 같은 실수를 반복하지 않습니다.
             </p>
-          </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Testimonials */}
       <section id="testimonials" className="bg-slate-50/50 py-24">
         <div className="mx-auto flex max-w-[1512px] flex-col gap-16 px-6 lg:px-[120px]">
-          <div className="flex flex-col items-center gap-4">
+          <Reveal className="flex flex-col items-center gap-4">
             <span className="inline-flex items-center rounded-md bg-white px-3 py-1 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]">
               <span className="text-[13px] font-bold text-indigo-500">
                 셀러 후기
@@ -282,12 +295,13 @@ export default function Home() {
             <h2 className="max-w-2xl text-center text-3xl font-extrabold tracking-tight text-[#1A1F27] sm:text-4xl">
               놓쳤을 신호를, 미리 짚어준다는 것
             </h2>
-          </div>
+          </Reveal>
 
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            {testimonials.map((t) => (
-              <div
+            {testimonials.map((t, i) => (
+              <Reveal
                 key={t.name}
+                delay={i * 80}
                 className="flex flex-col gap-6 rounded-[32px] border border-slate-100 bg-white p-8 shadow-[0_1px_3px_0_rgba(0,0,0,0.1)]"
               >
                 <div className="flex gap-1">
@@ -316,7 +330,7 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -327,7 +341,7 @@ export default function Home() {
         id="cta"
         className="bg-gradient-to-b from-violet-900/5 to-white py-32"
       >
-        <div className="mx-auto flex max-w-[1512px] flex-col items-center gap-6 px-6 text-center lg:px-[120px]">
+        <Reveal className="mx-auto flex max-w-[1512px] flex-col items-center gap-6 px-6 text-center lg:px-[120px]">
           <h2 className="max-w-3xl text-3xl font-extrabold leading-tight tracking-tight text-[#1A1F27] sm:text-4xl">
             다음 이상 신호가 오기 전에,
             <br />
@@ -357,7 +371,7 @@ export default function Home() {
               신용카드 등록 없이 시작 · 언제든 채널 연결 해제 가능
             </p>
           </div>
-        </div>
+        </Reveal>
       </section>
 
       <Footer />
