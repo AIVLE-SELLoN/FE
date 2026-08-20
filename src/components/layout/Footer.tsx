@@ -1,14 +1,13 @@
 import { AlertTriangle, Instagram, Youtube, Facebook } from "lucide-react";
 import Link from "next/link";
 
-// 가격 안내 / 이용약관 / 개인정보 처리방침 페이지는 아직 안 만들어져서 임시 경로예요. TODO: 실제 페이지 생기면 교체
 const serviceLinks = [
   { label: "기능 소개", href: "/#features" },
   { label: "가격 안내", href: "/pricing" },
   { label: "도입 사례", href: "/#testimonials" },
 ];
 const supportLinks = [
-  { label: "문의하기", href: "/cs?view=inquiry" },
+  { label: "자주 묻는 질문", href: "/faq" },
   { label: "이용약관", href: "/terms" },
   { label: "개인정보 처리방침", href: "/privacy" },
 ];
@@ -20,15 +19,10 @@ export default function Footer() {
         <div className="flex flex-col gap-12 sm:flex-row sm:justify-between">
           <div className="flex flex-col gap-6">
             <div className="flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded bg-indigo-500 text-white">
-                <AlertTriangle className="h-[10px] w-[10px]" strokeWidth={3} />
-              </span>
-              <span className="text-lg font-bold tracking-tight text-[#1A1F27]">
-                SELLoN
-              </span>
+              <img src="/logo3.png" alt="SELLoN" className="h-6 w-auto" />
             </div>
             <p className="text-sm leading-relaxed text-slate-400">
-              사업자등록번호 000-00-00000 · 대표 김세론
+              사업자등록번호 000-00-00000 · 수도권 AI 4반 11조
               <br />
               서울특별시 성동구 성수동
             </p>

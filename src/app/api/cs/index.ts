@@ -23,6 +23,12 @@ export async function getMyInquiries(): Promise<CsInquiry[]> {
   return z.array(csInquirySchema).parse(data);
 }
 
+// 관리자 전용(ADMIN) — 전체 사용자의 문의 목록 조회.
+export async function getAllInquiries(): Promise<CsInquiry[]> {
+  const data = await api.get<unknown>('/inquiries/admin');
+  return z.array(csInquirySchema).parse(data);
+}
+
 export async function getInquiryDetail(inquireKey: number): Promise<CsInquiry> {
   const data = await api.get<unknown>(`/inquiries/${inquireKey}`);
   return csInquirySchema.parse(data);
@@ -38,6 +44,29 @@ export async function updateInquiry(
 
 export async function deleteInquiry(inquireKey: number): Promise<void> {
   await api.delete<void>(`/inquiries/${inquireKey}`);
+}
+
+// 아래 세 함수는 관리자 전용(ADMIN) 답변 등록/수정/삭제 API예요.
+// PATCH/DELETE는 이미 답변이 등록된 문의에만 호출할 수 있어요 (없으면 400).
+export async function createInquiryAnswer(
+  inquireKey: number,
+  req: { inquireAnswer: string }
+): Promise<CsInquiry> {
+  const data = await api.post<unknown>(`/inquiries/${inquireKey}/answer`, req);
+  return csInquirySchema.parse(data);
+}
+
+export async function updateInquiryAnswer(
+  inquireKey: number,
+  req: { inquireAnswer: string }
+): Promise<CsInquiry> {
+  const data = await api.patch<unknown>(`/inquiries/${inquireKey}/answer`, req);
+  return csInquirySchema.parse(data);
+}
+
+export async function deleteInquiryAnswer(inquireKey: number): Promise<CsInquiry> {
+  const data = await api.delete<unknown>(`/inquiries/${inquireKey}/answer`);
+  return csInquirySchema.parse(data);
 }
 
 export async function getFaqs(): Promise<Faq[]> {

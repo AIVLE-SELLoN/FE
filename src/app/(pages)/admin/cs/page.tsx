@@ -3,75 +3,64 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { getAllAnswers } from "@/lib/inquiryAnswers";
+import { getAllInquiries } from "@/app/api/cs";
+import {
+  INQUIRE_TYPE_LABEL,
+  INQUIRE_TYPE_STYLE,
+  INQUIRY_STATUS_LABEL,
+  formatDate,
+  type CsInquiry,
+  type InquiryStatus,
+} from "@/app/api/cs/types";
+import { ApiError } from "@/app/api/client";
 
-type Category = "채널연동" | "상품관리" | "시스템" | "정산/결제" | "기타";
-type Status = "처리중" | "완료";
-
-type AdminInquiry = {
-  id: string;
-  no: number;
-  category: Category;
-  title: string;
-  preview: string;
-  date: string;
-  status: Status;
-  author: string;
-};
-
-const INQUIRY_CATEGORY_STYLE: Record<Category, { bg: string; text: string }> = {
-  채널연동: { bg: "bg-blue-50", text: "text-blue-600" },
-  상품관리: { bg: "bg-emerald-50", text: "text-emerald-600" },
-  시스템: { bg: "bg-purple-50", text: "text-purple-600" },
-  "정산/결제": { bg: "bg-yellow-50", text: "text-amber-600" },
-  기타: { bg: "bg-slate-100", text: "text-slate-600" },
-};
-
-// 목데이터 — 실제로는 GET /inquiries/admin(상태 필터 옵션 포함)에서 받아와야 해요.
-// status는 "아직 아무도 답변 안 했을 때의 초기값"이고, 실제 표시 상태는
-// localStorage(답변 등록 여부)를 반영해 화면에서 다시 계산해요.
-export const adminInquiries: AdminInquiry[] = [
-  { id: "124", no: 124, category: "채널연동", title: "A1-1 채널 연결 실패 관련 문의", preview: "API 인증 오류가 지속적으로 발생하고 있습니다.", date: "2026.07.12", status: "완료", author: "홍길동" },
-  { id: "123", no: 123, category: "상품관리", title: "상품 매핑 오류 문의", preview: "네이버 스마트스토어 상품 옵션 매핑이 누락되었습니다.", date: "2026.03.12", status: "처리중", author: "김민지" },
-  { id: "122", no: 122, category: "시스템", title: "계정 연동 지연 현상 문의", preview: "로그인 시 응답 시간이 평소보다 오래 걸립니다.", date: "2026.03.10", status: "처리중", author: "박서준" },
-  { id: "121", no: 121, category: "정산/결제", title: "정산 내역 확인 요청", preview: "지난달 정산 리포트 데이터 수정 요청드립니다.", date: "2026.03.05", status: "처리중", author: "이수아" },
-  { id: "120", no: 120, category: "기타", title: "서비스 이용 방법 문의", preview: "대시보드 위젯 커스텀 기능이 있는지 궁금합니다.", date: "2026.03.01", status: "처리중", author: "정하늘" },
-];
-
-const STATUS_FILTERS: ("전체" | Status)[] = ["전체", "처리중", "완료"];
+const STATUS_FILTERS: ("전체" | InquiryStatus)[] = ["전체", "WAITING", "DISCUSSING", "CLEARED"];
+const PAGE_SIZE = 5;
 
 export default function AdminCsListPage() {
   const router = useRouter();
+  const [inquiries, setInquiries] = useState<CsInquiry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"전체" | Status>("전체");
-  const [answeredIds, setAnsweredIds] = useState<Set<string>>(new Set());
+  const [statusFilter, setStatusFilter] = useState<"전체" | InquiryStatus>("전체");
+  const [page, setPage] = useState(1);
 
-  // 상세 페이지에서 등록한 답변 여부를 불러와요.
-  // (상세 페이지 방문 후 뒤로 돌아올 때마다 이 페이지가 새로 마운트되므로 여기서 다시 읽어옵니다.)
   useEffect(() => {
-    setAnsweredIds(new Set(Object.keys(getAllAnswers())));
+    let ignore = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await getAllInquiries();
+        if (!ignore) setInquiries(data);
+      } catch (e) {
+        if (!ignore) setError(e instanceof ApiError ? e.message : "문의 목록을 불러오지 못했습니다.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      ignore = true;
+    };
   }, []);
-
-  // 124번은 데모용으로 원래부터 답변이 있던 것으로 취급 (상세 페이지의 seedAnswers와 동일)
-  const effectiveStatus = (i: AdminInquiry): Status =>
-    answeredIds.has(i.id) || i.id === "124" ? "완료" : "처리중";
-
-  const withStatus = useMemo(
-    () => adminInquiries.map((i) => ({ ...i, status: effectiveStatus(i) })),
-    [answeredIds],
-  );
 
   const filtered = useMemo(
     () =>
-      withStatus.filter(
+      inquiries.filter(
         (i) =>
-          i.title.toLowerCase().includes(query.toLowerCase()) &&
-          (statusFilter === "전체" || i.status === statusFilter),
+          i.inquireTitle.toLowerCase().includes(query.toLowerCase()) &&
+          (statusFilter === "전체" || i.inquiryStatus === statusFilter)
       ),
-    [withStatus, query, statusFilter],
+    [inquiries, query, statusFilter]
   );
 
-  const pendingCount = withStatus.filter((i) => i.status === "처리중").length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pendingCount = inquiries.filter((i) => i.inquiryStatus !== "CLEARED").length;
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -92,13 +81,22 @@ export default function AdminCsListPage() {
           </div>
 
           <div className="flex flex-col gap-6 px-5">
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
+
             <div className="rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-50 px-6 py-4">
                 <div className="flex max-w-[280px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5">
                   <Search className="h-3.5 w-3.5 text-slate-400" />
                   <input
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(e) => {
+                      setQuery(e.target.value);
+                      setPage(1);
+                    }}
                     placeholder="문의 제목으로 검색"
                     className="w-full bg-transparent text-[13px] text-slate-700 placeholder:text-slate-400 focus:outline-none"
                   />
@@ -107,7 +105,10 @@ export default function AdminCsListPage() {
                   {STATUS_FILTERS.map((s) => (
                     <button
                       key={s}
-                      onClick={() => setStatusFilter(s)}
+                      onClick={() => {
+                        setStatusFilter(s);
+                        setPage(1);
+                      }}
                       className={
                         "rounded-full px-4 py-1.5 text-xs font-bold " +
                         (statusFilter === s
@@ -115,7 +116,7 @@ export default function AdminCsListPage() {
                           : "border border-slate-200 bg-white text-slate-500 hover:bg-slate-50")
                       }
                     >
-                      {s}
+                      {s === "전체" ? "전체" : INQUIRY_STATUS_LABEL[s]}
                     </button>
                   ))}
                 </div>
@@ -127,62 +128,90 @@ export default function AdminCsListPage() {
                   <div className="w-[110px] shrink-0 px-6 py-3">작성자</div>
                   <div className="w-[130px] shrink-0 px-6 py-3">분류</div>
                   <div className="min-w-[220px] flex-1 px-6 py-3">문의 제목</div>
-                  <div className="w-[120px] shrink-0 px-6 py-3">등록일</div>
+                  <div className="w-[130px] shrink-0 px-6 py-3">등록일</div>
                   <div className="w-[140px] shrink-0 px-6 py-3">상태</div>
                 </div>
 
                 <div className="min-w-[860px]">
-                  {filtered.length === 0 && (
+                  {loading ? (
+                    <p className="px-6 py-10 text-center text-sm text-slate-400">불러오는 중...</p>
+                  ) : paged.length === 0 ? (
                     <p className="px-6 py-10 text-center text-sm text-slate-400">해당하는 문의가 없습니다.</p>
-                  )}
-                  {filtered.map((i) => {
-                    const cat = INQUIRY_CATEGORY_STYLE[i.category];
-                    return (
-                      <button
-                        key={i.id}
-                        onClick={() => router.push(`/admin/cs/${i.id}`)}
-                        className="flex w-full items-center border-b border-slate-50 px-0 py-4 text-left last:border-b-0 hover:bg-slate-50"
-                      >
-                        <div className="w-[70px] shrink-0 px-6 text-sm text-slate-400">{i.no}</div>
-                        <div className="w-[110px] shrink-0 px-6 text-sm text-slate-600">{i.author}</div>
-                        <div className="w-[130px] shrink-0 px-6">
-                          <span
-                            className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium ${cat.bg} ${cat.text}`}
-                          >
-                            {i.category}
-                          </span>
-                        </div>
-                        <div className="min-w-[220px] flex-1 px-6">
-                          <p className="text-sm font-medium text-slate-800">{i.title}</p>
-                          <p className="pt-1 text-[11px] text-slate-400">{i.preview}</p>
-                        </div>
-                        <div className="w-[120px] shrink-0 px-6 text-sm text-slate-500">{i.date}</div>
-                        <div className="w-[140px] shrink-0 px-6">
-                          <span className="flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium">
+                  ) : (
+                    paged.map((i) => {
+                      const typeStyle = INQUIRE_TYPE_STYLE[i.inquireType];
+                      const isCleared = i.inquiryStatus === "CLEARED";
+                      return (
+                        <button
+                          key={i.inquireKey}
+                          onClick={() => router.push(`/admin/cs/${i.inquireKey}`)}
+                          className="flex w-full items-center border-b border-slate-50 px-0 py-4 text-left last:border-b-0 hover:bg-slate-50"
+                        >
+                          <div className="w-[70px] shrink-0 px-6 text-sm text-slate-400">{i.inquireKey}</div>
+                          <div className="w-[110px] shrink-0 px-6 text-sm text-slate-600">{i.authorName}</div>
+                          <div className="w-[130px] shrink-0 px-6">
                             <span
-                              className={"h-1.5 w-1.5 shrink-0 rounded-full " + (i.status === "처리중" ? "bg-orange-400" : "bg-emerald-400")}
-                            />
-                            <span className={i.status === "처리중" ? "text-orange-600" : "text-emerald-600"}>
-                              {i.status === "처리중" ? "답변 대기" : "답변 완료"}
+                              className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-medium ${typeStyle.bg} ${typeStyle.text}`}
+                            >
+                              {INQUIRE_TYPE_LABEL[i.inquireType]}
                             </span>
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                          </div>
+                          <div className="min-w-[220px] flex-1 px-6">
+                            <p className="text-sm font-medium text-slate-800">{i.inquireTitle}</p>
+                            <p className="pt-1 text-[11px] text-slate-400">
+                              {i.inquireContent.length > 40 ? i.inquireContent.slice(0, 40) + "…" : i.inquireContent}
+                            </p>
+                          </div>
+                          <div className="w-[130px] shrink-0 whitespace-nowrap px-6 text-sm text-slate-500">
+                            {formatDate(i.createdAt)}
+                          </div>
+                          <div className="w-[140px] shrink-0 px-6">
+                            <span className="flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium">
+                              <span
+                                className={"h-1.5 w-1.5 shrink-0 rounded-full " + (isCleared ? "bg-emerald-400" : "bg-orange-400")}
+                              />
+                              <span className={isCleared ? "text-emerald-600" : "text-orange-600"}>
+                                {INQUIRY_STATUS_LABEL[i.inquiryStatus]}
+                              </span>
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
               <div className="flex items-center justify-between border-t border-slate-50 px-6 py-4">
-                <p className="text-[11px] text-slate-400">전체 {adminInquiries.length}개 중 표시</p>
+                <p className="text-[11px] text-slate-400">
+                  전체 {filtered.length}개 중 {paged.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}-
+                  {(page - 1) * PAGE_SIZE + paged.length} 표시
+                </p>
                 <div className="flex items-center gap-1">
-                  <button className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 disabled:opacity-40"
+                  >
                     <ChevronLeft className="h-3.5 w-3.5" />
                   </button>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-[13px] font-semibold text-white">
-                    1
-                  </button>
-                  <button className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={
+                        "flex h-7 w-7 items-center justify-center rounded-lg text-[13px] font-semibold " +
+                        (p === page ? "bg-indigo-600 text-white" : "text-slate-500 hover:bg-slate-50")
+                      }
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 disabled:opacity-40"
+                  >
                     <ChevronRight className="h-3.5 w-3.5" />
                   </button>
                 </div>

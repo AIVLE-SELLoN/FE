@@ -3,14 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { CheckCircle, Mail, X } from "lucide-react";
+import { findId, findPassword } from "@/app/api/auth";
+import { ApiError } from "@/app/api/client";
 
-const footerLinks = ["서비스 이용약관", "개인정보처리방침", "고객센터"];
-
-// 데모용 — 실제로는 백엔드가 회사명+사용자 이름으로 계정을 조회해서
-// 마스킹된 이메일을 내려줘야 해요.
-const DEMO_COMPANY = "마르디 메크르디";
-const DEMO_USERNAME = "김유진";
-const DEMO_MASKED_EMAIL = "exa***@sellon.com";
+const footerLinks = [
+  { label: "서비스 이용약관", href: "/terms" },
+  { label: "개인정보처리방침", href: "/privacy" },
+  { label: "고객센터", href: "/faq" },
+];
 
 function FoundIdModal({ email, onClose }: { email: string; onClose: () => void }) {
   return (
@@ -111,7 +111,7 @@ function PasswordResetModal({ email, onClose }: { email: string; onClose: () => 
               href="/login"
               className="flex h-[52px] w-full items-center justify-center rounded-xl bg-indigo-500 text-sm font-bold text-white hover:bg-indigo-600"
             >
-              비밀번호 재설정하기
+              로그인하러 가기
             </Link>
             <button
               onClick={onClose}
@@ -134,26 +134,41 @@ export default function FindAccountPage() {
   const [foundEmail, setFoundEmail] = useState<string | null>(null);
   const [tempPasswordEmail, setTempPasswordEmail] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [idLoading, setIdLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
-  const handleFindId = (e: React.FormEvent) => {
+  const handleFindId = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 백엔드 계정 조회 API 붙으면 이 부분을 실제 fetch 호출로 교체
-    if (company === DEMO_COMPANY && userName === DEMO_USERNAME) {
-      setNotFound(false);
-      setFoundEmail(DEMO_MASKED_EMAIL);
-    } else {
+    setNotFound(false);
+    setIdLoading(true);
+    try {
+      const { maskedEmail } = await findId({ companyName: company, userName });
+      setFoundEmail(maskedEmail);
+    } catch (error) {
+      // 백엔드는 일치하는 계정이 없으면 404를 내려줘요
       setNotFound(true);
+    } finally {
+      setIdLoading(false);
     }
   };
 
-  const handleFindPassword = (e: React.FormEvent) => {
+  const handleFindPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 백엔드 임시 비밀번호 발급 API 붙으면 이 부분을 실제 fetch 호출로 교체하고,
-    // 응답으로 받은 마스킹된 이메일을 넣으면 돼요.
-    const masked = email.includes("@")
-      ? email.slice(0, 3) + "***@" + email.split("@")[1]
-      : DEMO_MASKED_EMAIL;
-    setTempPasswordEmail(masked);
+    setPasswordError(null);
+    setPasswordLoading(true);
+    try {
+      const { maskedEmail } = await findPassword({ email });
+      setTempPasswordEmail(maskedEmail);
+    } catch (error) {
+      setPasswordError(
+        error instanceof ApiError
+          ? error.message
+          : "일치하는 계정을 찾을 수 없어요. 이메일을 다시 확인해주세요."
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   return (
@@ -181,7 +196,7 @@ export default function FindAccountPage() {
                   type="button"
                   onClick={() => setTab("id")}
                   className={
-                    "flex-1 rounded-lg py-2.5 text-xs font-bold transition-colors " +
+                    "flex-1 rounded-lg py-3 text-sm font-bold transition-colors " +
                     (tab === "id"
                       ? "bg-indigo-500 text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                       : "text-[#71717A]")
@@ -193,7 +208,7 @@ export default function FindAccountPage() {
                   type="button"
                   onClick={() => setTab("password")}
                   className={
-                    "flex-1 rounded-lg py-2.5 text-xs font-bold transition-colors " +
+                    "flex-1 rounded-lg py-3 text-sm font-bold transition-colors " +
                     (tab === "password"
                       ? "bg-indigo-500 text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)]"
                       : "text-[#71717A]")
@@ -255,9 +270,10 @@ export default function FindAccountPage() {
 
                 <button
                   type="submit"
-                  className="mt-3 flex h-[68px] w-full items-center justify-center rounded-xl bg-indigo-500 text-sm font-bold text-white hover:bg-indigo-600"
+                  disabled={idLoading}
+                  className="mt-3 flex w-full items-center justify-center rounded-xl bg-indigo-500 py-3 text-sm font-bold text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  아이디 찾기
+                  {idLoading ? "조회 중..." : "아이디 찾기"}
                 </button>
               </form>
             ) : (
@@ -276,11 +292,15 @@ export default function FindAccountPage() {
                   />
                   <button
                     type="submit"
-                    className="h-[55px] w-[148px] shrink-0 rounded-[4.44px] bg-indigo-500 text-[10.5px] font-bold text-white hover:bg-indigo-600"
+                    disabled={passwordLoading}
+                    className="shrink-0 whitespace-nowrap rounded-[4.44px] bg-indigo-500 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    임시 비밀번호 발급
+                    {passwordLoading ? "발급 중..." : "임시 비밀번호 발급"}
                   </button>
                 </div>
+                {passwordError && (
+                  <p className="pt-1 text-[13px] font-medium text-red-500">{passwordError}</p>
+                )}
               </form>
             )}
 
@@ -296,10 +316,14 @@ export default function FindAccountPage() {
       {/* Footer */}
       <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
         <div className="flex items-center gap-5">
-          {footerLinks.map((label) => (
-            <span key={label} className="text-[10px] text-[#99A1AF]">
-              {label}
-            </span>
+          {footerLinks.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className="text-[10px] text-[#99A1AF] hover:text-slate-500"
+            >
+              {link.label}
+            </Link>
           ))}
         </div>
         <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>

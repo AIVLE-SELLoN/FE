@@ -1,7 +1,8 @@
 import { api } from '../client';
 import { loginResponseSchema, type LoginResponse } from './types';
 import { useAuthStore } from '@/store/useAuthStore';
-import { verificationTokenSchema, signupResponseSchema, type VerificationTokenResponse, type SignupResponse } from './types';
+import { verificationTokenSchema, signupResponseSchema, findIdResponseSchema, findPasswordResponseSchema,
+  FindIdResponse, FindPasswordResponse, VerificationTokenResponse, SignupResponse } from './types';
 
 interface LoginRequest {
   email: string;
@@ -44,4 +45,16 @@ export async function signupMember(req: {
 }): Promise<SignupResponse> {
   const data = await api.post<unknown>('/api/v1/sellon/auth/register/member', req);
   return signupResponseSchema.parse(data);
+}
+
+export async function findId(req: { companyName: string; userName: string }): Promise<FindIdResponse> {
+  const data = await api.post<unknown>('/api/v1/sellon/auth/find-id', req);
+  return findIdResponseSchema.parse(data);
+}
+ 
+// 비밀번호 찾기 - 가입 이메일로 임시 비밀번호를 즉시 발급/발송
+// 일치하는 계정이 없으면 백엔드가 404를 내려줘요 (ApiError)
+export async function findPassword(req: { email: string }): Promise<FindPasswordResponse> {
+  const data = await api.post<unknown>('/api/v1/sellon/auth/find-password', req);
+  return findPasswordResponseSchema.parse(data);
 }

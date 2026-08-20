@@ -10,6 +10,13 @@ import {
   signupMember,
 } from "@/app/api/auth";
 import { ApiError } from "@/app/api/client";
+import LegalModal from "@/components/common/LegalModal";
+import {
+  termsSections,
+  privacySections,
+  TERMS_UPDATED_AT,
+  PRIVACY_UPDATED_AT,
+} from "@/lib/legal/content";
 
 const REQUIRED_TERMS = [
   { id: "service", label: "[필수] 이용약관 동의" },
@@ -47,6 +54,7 @@ export default function SignupPage() {
     privacy: false,
     marketing: false,
   });
+  const [openLegal, setOpenLegal] = useState<"service" | "privacy" | null>(null);
   const allAgreed = ALL_TERMS.every((t) => checked[t.id]);
   const requiredAgreed = REQUIRED_TERMS.every((t) => checked[t.id]);
   const toggleAll = () => {
@@ -155,9 +163,18 @@ export default function SignupPage() {
                   />
                   <span className="text-[13px] text-[#3F3F46]">
                     {term.label}
-                    <button type="button" className="ml-1.5 font-medium text-[#5821B6] hover:underline">
-                      전문 보기
-                    </button>
+                    {(term.id === "service" || term.id === "privacy") && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setOpenLegal(term.id);
+                        }}
+                        className="ml-1.5 font-medium text-[#5821B6] hover:underline"
+                      >
+                        전문 보기
+                      </button>
+                    )}
                   </span>
                 </label>
               ))}
@@ -192,6 +209,21 @@ export default function SignupPage() {
           </div>
           <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>
         </div>
+
+        <LegalModal
+          open={openLegal === "service"}
+          onClose={() => setOpenLegal(null)}
+          title="서비스 이용약관"
+          updatedAt={TERMS_UPDATED_AT}
+          sections={termsSections}
+        />
+        <LegalModal
+          open={openLegal === "privacy"}
+          onClose={() => setOpenLegal(null)}
+          title="개인정보 처리방침"
+          updatedAt={PRIVACY_UPDATED_AT}
+          sections={privacySections}
+        />
       </div>
     );
   }

@@ -28,3 +28,13 @@ export const signupResponseSchema = z.object({
   companyKey: z.string().nullable(),
 });
 export type SignupResponse = z.infer<typeof signupResponseSchema>;
+
+export const findIdResponseSchema = z.object({
+  maskedEmail: z.string(),
+});
+export type FindIdResponse = z.infer<typeof findIdResponseSchema>;
+
+export const findPasswordResponseSchema = z.object({
+  maskedEmail: z.string(),
+});
+export type FindPasswordResponse = z.infer<typeof findPasswordResponseSchema>;
