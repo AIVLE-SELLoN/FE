@@ -288,7 +288,7 @@ function CsAutomationPageContent() {
 
         {tab === "create" ? (
           subView === "list" ? (
-            <main className="flex flex-col gap-4 p-5">
+            <main className="flex flex-1 flex-col gap-4 p-5">
               {/* List card */}
               <div className="overflow-hidden rounded-2xl border border-[#E4E4E7] bg-white shadow-[0_3px_7px_-2px_rgba(46,60,129,0.08)]">
                 <div className="flex items-center justify-between border-b border-[#F4F4F5] px-5 py-4">
@@ -371,7 +371,7 @@ function CsAutomationPageContent() {
               </div>
             </main>
           ) : (
-            <main className="flex flex-col gap-5 p-5">
+            <main className="flex flex-1 flex-col gap-5 p-5">
               <button
                 onClick={() => setSubView("list")}
                 className="flex w-fit items-center gap-1 text-xs font-medium text-[#71717B] hover:text-slate-700"
@@ -518,7 +518,7 @@ function CsAutomationPageContent() {
             </main>
           )
         ) : (
-          <main className="flex flex-col gap-4 p-10">
+          <main className="flex flex-1 flex-col gap-4 p-10">
             <div className="flex items-center justify-between pb-1">
               <h1 className="text-2xl font-bold text-slate-900">가이드라인 히스토리</h1>
             </div>
@@ -621,7 +621,7 @@ function CsAutomationPageContent() {
           </main>
         )}
 
-        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] bg-white px-6 py-8 text-center">
+        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
             <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
               서비스 이용약관
