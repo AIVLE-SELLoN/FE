@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
 
 export type Role = "ADMIN" | "ROOT" | "MEMBER";
 
@@ -8,12 +8,14 @@ export type AuthUser = {
   email: string;
   name: string;
   role: Role;
+  profileImageUrl?: string | null;
 };
 
 type AuthContextValue = {
   user: AuthUser | null;
   isLoading: boolean;
   login: (user: AuthUser) => void;
+  updateUser: (updates: Partial<AuthUser>) => void;
   logout: () => void;
 };
 
@@ -39,26 +41,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = (nextUser: AuthUser) => {
+  const login = useCallback((nextUser: AuthUser) => {
     setUser(nextUser);
     try {
       window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextUser));
     } catch {
       // 저장 실패해도 현재 세션 상태는 유지
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const updateUser = useCallback((updates: Partial<AuthUser>) => {
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser;
+      const nextUser = { ...currentUser, ...updates };
+      try {
+        window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(nextUser));
+      } catch {
+        // 저장 실패해도 현재 세션 상태는 유지
+      }
+      return nextUser;
+    });
+  }, []);
+
+  const logout = useCallback(() => {
     setUser(null);
     try {
       window.localStorage.removeItem(AUTH_STORAGE_KEY);
     } catch {
       // ignore
     }
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, updateUser, logout }}>
       {children}
     </AuthContext.Provider>
   );

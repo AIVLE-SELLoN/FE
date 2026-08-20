@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -20,6 +20,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth/AuthContext';
+import { getMyPage } from '@/app/api/mypage';
 
 function basePath(href: string) {
   return href.split('?')[0];
@@ -221,7 +222,8 @@ export default function Sidebar() {
   const searchParams = useSearchParams();
   const qs = searchParams.toString();
   const currentFullPath = qs ? `${pathname}?${qs}` : pathname;
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
+  const userEmail = user?.email;
 
   const [query, setQuery] = useState('');
   const searching = query.trim().length > 0;
@@ -231,6 +233,26 @@ export default function Sidebar() {
   const filteredSettingsGroups = useMemo(() => filterGroups(settingsGroups, query), [query]);
   const filteredSettingsSimple = useMemo(() => filterSimpleItems(settingsSimple, query), [query]);
   const myPageMatches = !searching || matches(myPageItem.label, query);
+
+  useEffect(() => {
+    if (!userEmail) return;
+
+    let cancelled = false;
+
+    async function syncProfileImage() {
+      try {
+        const profile = await getMyPage();
+        if (!cancelled) updateUser({ profileImageUrl: profile.profileImageUrl });
+      } catch {
+        // 프로필 조회 실패 시 기존 이니셜 아바타를 유지합니다.
+      }
+    }
+
+    syncProfileImage();
+    return () => {
+      cancelled = true;
+    };
+  }, [userEmail, updateUser]);
 
   const hasAnyResult =
     filteredSimpleInsight.length > 0 ||
@@ -310,8 +332,13 @@ export default function Sidebar() {
       {/* Profile */}
       <div className="border-t border-slate-100 p-4">
         <div className="flex items-center gap-3 p-2">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-indigo-50 text-sm font-bold text-indigo-500">
-            {user?.name?.[0] ?? '?'}
+          <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-indigo-50 text-sm font-bold text-indigo-500">
+            {user?.profileImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={user.profileImageUrl} alt="프로필 사진" className="h-full w-full object-cover" />
+            ) : (
+              user?.name?.[0] ?? '?'
+            )}
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-slate-800">{user?.name ?? '로그인이 필요해요'}</p>
