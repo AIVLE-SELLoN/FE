@@ -207,9 +207,15 @@ export default function SignupPage() {
             <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
           </Link>
           <div className="flex items-center gap-5">
-            <span className="text-[10px] text-[#99A1AF]">서비스 이용약관</span>
-            <span className="text-[10px] font-bold text-[#99A1AF]">개인정보처리방침</span>
-            <span className="text-[10px] text-[#99A1AF]">고객센터</span>
+            <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              서비스 이용약관
+            </Link>
+            <Link href="/privacy" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              개인정보처리방침
+            </Link>
+            <Link href="/faq" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              고객센터
+            </Link>
           </div>
           <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>
         </div>

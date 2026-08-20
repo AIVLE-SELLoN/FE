@@ -1,4 +1,3 @@
-import { AlertTriangle, Instagram, Youtube, Facebook } from "lucide-react";
 import Link from "next/link";
 
 const serviceLinks = [
@@ -62,15 +61,10 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="mt-10 flex flex-col-reverse items-center justify-between gap-6 border-t border-[#F8F9FC] pt-8 sm:flex-row">
+        <div className="mt-10 flex items-center justify-center border-t border-[#F8F9FC] pt-8">
           <p className="text-[13px] text-slate-400">
             © 2026 SELLoN. All rights reserved.
           </p>
-          <div className="flex items-center gap-4 text-slate-400">
-            <Facebook className="h-[18px] w-[18px]" />
-            <Instagram className="h-[18px] w-[18px]" />
-            <Youtube className="h-[18px] w-[18px]" />
-          </div>
         </div>
       </div>
     </footer>
