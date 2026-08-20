@@ -16,7 +16,6 @@ export default function ProductSelect({
   products = DEFAULT_PRODUCTS,
   value,
   onChange,
-  label = "상품 선택",
 }: {
   products?: ProductOption[];
   value: string;
@@ -36,19 +35,18 @@ export default function ProductSelect({
   }, []);
 
   return (
-    <div ref={ref} className="relative w-[260px]">
-      <p className="absolute -top-[13px] left-0 text-[11px] font-semibold text-slate-400">{label}</p>
+    <div ref={ref} className="relative w-fit">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="mt-[13px] flex h-11 w-full items-center justify-between rounded-[10px] border-[1.5px] border-slate-300 bg-white px-4 text-[14px] font-bold text-[#1F2430] shadow-sm"
+        className="flex items-center gap-1.5 text-lg font-bold text-slate-900 hover:text-indigo-600"
       >
-        {selected.id} · {selected.name}
-        <ChevronDown className={"h-2.5 w-2.5 text-slate-500 transition-transform " + (open ? "rotate-180" : "")} />
+        {selected.name} ({selected.id})
+        <ChevronDown className={"h-3.5 w-3.5 text-slate-400 transition-transform " + (open ? "rotate-180" : "")} />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-[58px] z-20 w-[260px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-[0_6px_16px_rgba(0,0,0,0.14)]">
+        <div className="absolute left-0 top-[34px] z-20 w-[240px] rounded-xl border border-slate-200 bg-white p-1.5 shadow-[0_6px_16px_rgba(0,0,0,0.14)]">
           {products.map((p) => {
             const isSelected = p.id === value;
             return (
@@ -64,7 +62,7 @@ export default function ProductSelect({
                   (isSelected ? "bg-[#F5F3FF] font-bold text-[#4F39F6]" : "font-medium text-slate-600 hover:bg-slate-50")
                 }
               >
-                {p.id} · {p.name}
+                {p.name} ({p.id})
                 {isSelected && <Check className="h-3.5 w-3.5 text-[#4F39F6]" />}
               </button>
             );

@@ -2,38 +2,46 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { postLogin } from "@/app/api/auth";
+import { ApiError } from "@/app/api/client";
 
-const footerLinks = ["서비스 이용약관", "개인정보처리방침", "고객센터"];
+const footerLinks = [
+  { label: "서비스 이용약관", href: "/terms" },
+  { label: "개인정보처리방침", href: "/privacy" },
+  { label: "고객센터", href: "/faq" },
+];
 
-// 데모용 — 실제로는 백엔드 로그인 API 응답으로 성공/실패를 판단해야 해요.
-const DEMO_EMAIL = "demo@sellon.co.kr";
-const DEMO_PASSWORD = "sellon1234!";
+const DEFAULT_LOGIN_ERROR_MESSAGE = "이메일 또는 비밀번호가 일치하지 않습니다. 다시 확인해 주세요.";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [loginType, setLoginType] = useState<"user" | "root">("user");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberId, setRememberId] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState(false);
+  // 백엔드 메시지를 그대로 보여줘요 (예: 로그인 시도 횟수 초과 시 423 + "N초 후 다시 시도해주세요.").
+  // 그래야 계정 잠금(AccountLockedException)일 때도 "비밀번호가 틀렸다"는 오해를 안 줘요.
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 백엔드 로그인 API 붙으면 이 부분을 실제 fetch 호출로 교체하고,
-    // 응답 상태에 따라 setLoginError / 로딩 화면 표시 여부를 결정하면 돼요.
-    if (email === DEMO_EMAIL && password === DEMO_PASSWORD) {
-      setLoginError(false);
-      setIsLoggingIn(true);
-      // 데모용 지연 — 실제로는 API 응답을 받은 뒤 바로 이동하면 됩니다.
-      setTimeout(() => {
-        router.push("/channels/connect");
-      }, 1400);
-    } else {
-      setLoginError(true);
+    setLoginError(null);
+    setIsLoggingIn(true);
+
+    try {
+      const result = await postLogin({ email, password });
+      login({ email: result.email, name: result.name, role: result.role });
+      router.push(result.role === "ADMIN" ? "/admin/cs" : "/channel");
+    } catch (err) {
+      setLoginError(err instanceof ApiError ? err.message : DEFAULT_LOGIN_ERROR_MESSAGE);
+      setIsLoggingIn(false);
     }
   };
 
@@ -56,11 +64,18 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-3 border-t border-[#E5E7EB] bg-white px-6 py-8 text-center">
+          <Link href="/" className="mb-1">
+            <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+          </Link>
           <div className="flex items-center gap-5">
-            {footerLinks.map((label) => (
-              <span key={label} className="text-[10px] text-[#99A1AF]">
-                {label}
-              </span>
+            {footerLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-[10px] text-[#99A1AF] hover:text-slate-500"
+              >
+                {link.label}
+              </Link>
             ))}
           </div>
           <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>
@@ -120,9 +135,7 @@ export default function LoginPage() {
               {loginError && (
                 <div className="flex items-center gap-1.5 rounded-md border border-[#FCC4C4] bg-[#FEF2F2] px-2.5 py-2">
                   <AlertCircle className="h-3.5 w-3.5 shrink-0 text-[#DC2626]" />
-                  <p className="text-[13px] font-medium text-[#DC2626]">
-                    이메일 또는 비밀번호가 일치하지 않습니다. 다시 확인해 주세요.
-                  </p>
+                  <p className="text-[13px] font-medium text-[#DC2626]">{loginError}</p>
                 </div>
               )}
             </div>
@@ -138,10 +151,10 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (loginError) setLoginError(false);
+                    if (loginError) setLoginError(null);
                   }}
                   placeholder="example@sellon.co.kr"
-                  className={inputClass(loginError)}
+                  className={inputClass(!!loginError)}
                 />
               </div>
 
@@ -156,10 +169,10 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      if (loginError) setLoginError(false);
+                      if (loginError) setLoginError(null);
                     }}
                     placeholder="8자 이상 영문/숫자/특수문자 조합"
-                    className={inputClass(loginError) + " pr-11"}
+                    className={inputClass(!!loginError) + " pr-11"}
                   />
                   <button
                     type="button"
@@ -189,7 +202,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="mt-2 w-full rounded-xl bg-indigo-500 py-5 text-lg font-bold text-white shadow-[0_10px_15px_-3px_rgba(79,53,161,0.13),0_4px_6px_-4px_rgba(79,53,161,0.13)] transition-transform hover:scale-[1.01]"
+                className="mt-2 w-full rounded-xl bg-indigo-500 py-3 text-sm font-bold text-white shadow-[0_10px_15px_-3px_rgba(79,53,161,0.13),0_4px_6px_-4px_rgba(79,53,161,0.13)] transition-transform hover:scale-[1.01]"
               >
                 로그인
               </button>
@@ -211,11 +224,18 @@ export default function LoginPage() {
 
       {/* Footer */}
       <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
+        <Link href="/" className="mb-1">
+          <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+        </Link>
         <div className="flex items-center gap-5">
-          {footerLinks.map((label) => (
-            <span key={label} className="text-[10px] text-[#99A1AF]">
-              {label}
-            </span>
+          {footerLinks.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className="text-[10px] text-[#99A1AF] hover:text-slate-500"
+            >
+              {link.label}
+            </Link>
           ))}
         </div>
         <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>

@@ -1,4 +1,4 @@
-import { Bell, ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { Bell, ArrowRight } from "lucide-react";
 
 const channelCards = [
   {
@@ -27,13 +27,11 @@ const channelCards = [
   },
 ];
 
-const bubbles = [
-  { label: "색상", value: "42건", size: 108, tone: "fill" },
-  { label: "사이즈", value: "28건", size: 74, tone: "muted" },
-  { label: "오배송", value: "19건", size: 62, tone: "muted" },
-  { label: "소재", value: "11건", size: 34, tone: "muted" },
-  { label: "파손", value: "7건", size: 30, tone: "muted" },
-  { label: "기타", value: "4건", size: 28, tone: "muted" },
+// RecommendedAction enum 라벨과 맞춘 조치 유형별 건수 (막대 리스트)
+const actionTypeCounts = [
+  { label: "개선안 생성", count: 3 },
+  { label: "상품 자체 점검 권장", count: 2 },
+  { label: "물류 점검 권장", count: 1 },
 ];
 
 const notifications = [
@@ -72,6 +70,8 @@ const notifications = [
 ];
 
 export default function HeroDashboardMock() {
+  const maxCount = Math.max(...actionTypeCounts.map((a) => a.count));
+
   return (
     <div className="w-full max-w-[640px] rounded-2xl bg-[#F8F8FC] p-3 pb-5 text-[10px] shadow-2xl shadow-indigo-200/40">
       <div className="flex flex-col gap-1.5">
@@ -91,18 +91,8 @@ export default function HeroDashboardMock() {
             </span>
             <div className="flex flex-col gap-1">
               <h4 className="text-[11px] font-bold text-indigo-500 underline underline-offset-2">
-                미해결 이상 이벤트 7건
+                아직 확인하지 않은 알림이 7건 있어요!
               </h4>
-              <div className="flex flex-wrap items-center gap-1">
-                {["네이버 2건", "쿠팡 4건", "지그재그 1건"].map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-indigo-500/20 bg-white/60 px-1.5 py-0.5 text-[6px] font-bold text-indigo-500"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
             </div>
           </div>
           <button className="flex flex-shrink-0 items-center gap-1 rounded-md bg-indigo-500 px-2.5 py-1.5 text-[7px] font-bold text-white">
@@ -177,64 +167,30 @@ export default function HeroDashboardMock() {
         </div>
 
         <div className="flex flex-col items-start gap-2 sm:flex-row">
-          <div className="w-full flex-shrink-0 rounded-xl border border-gray-100 bg-white px-2.5 py-2.5 shadow-sm sm:w-[240px]">
-            <div className="flex items-center justify-between pb-1">
-              <div>
-                <p className="text-[7px] font-bold text-[#101828]">
-                  채널별 이상 유형 순위
-                </p>
-                <p className="pt-0.5 text-[6px] text-[#99A1AF]">
-                  전체 상품 합산 기준
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="flex h-4 w-4 items-center justify-center rounded border border-gray-100 bg-[#FAFAFA]">
-                  <ChevronLeft className="h-2 w-2 text-[#6A7282]" />
-                </span>
-                <span className="flex h-4 w-4 items-center justify-center rounded border border-gray-100 bg-[#FAFAFA]">
-                  <ChevronRight className="h-2 w-2 text-[#6A7282]" />
-                </span>
-              </div>
-            </div>
-            <span className="mb-1 inline-flex items-center rounded-full bg-indigo-100 px-1.5 py-0.5 text-[7px] font-bold text-indigo-500">
-              쿠팡
-            </span>
-            <div className="mx-auto flex min-h-[135px] w-full max-w-[220px] flex-wrap items-center justify-center gap-1.5 py-1">
-              {bubbles.map((b) => (
-                <div
-                  key={b.label}
-                  className={`flex shrink-0 flex-col items-center justify-center rounded-full text-center ${
-                    b.tone === "fill"
-                      ? "bg-indigo-500 text-white"
-                      : "bg-gray-100 text-[#101828]"
-                  }`}
-                  style={{
-                    width: b.size,
-                    height: b.size,
-                  }}
-                >
-                  <span
-                    className="font-bold leading-none"
-                    style={{ fontSize: Math.max(b.size * 0.16, 8) }}
-                  >
-                    {b.value}
-                  </span>
-                  <span
-                    className={`leading-none ${b.tone === "fill" ? "text-white/75" : "text-[#99A1AF]"}`}
-                    style={{
-                      fontSize: Math.max(b.size * 0.13, 6),
-                      marginTop: 2,
-                    }}
-                  >
-                    {b.label}
-                  </span>
+          {/* 조치 유형별 건수 — 가로 바 리스트 */}
+          <div className="w-full flex-shrink-0 rounded-xl border border-gray-100 bg-white px-3 py-3 shadow-sm sm:w-[240px]">
+            <p className="pb-2.5 text-[8px] font-bold text-[#101828]">
+              조치 유형별 건수
+            </p>
+            <div className="flex flex-col gap-2.5">
+              {actionTypeCounts.map((item) => (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between pb-1 text-[7px]">
+                    <span className="font-medium text-[#4A5565]">
+                      {item.label}
+                    </span>
+                    <span className="font-bold text-[#101828]">
+                      {item.count}건
+                    </span>
+                  </div>
+                  <div className="h-1 overflow-hidden rounded-full bg-gray-100">
+                    <div
+                      className="h-full rounded-full bg-indigo-500"
+                      style={{ width: `${(item.count / maxCount) * 100}%` }}
+                    />
+                  </div>
                 </div>
               ))}
-            </div>
-            <div className="flex justify-center gap-1 pt-1">
-              <span className="h-1 w-2.5 rounded-full bg-indigo-500" />
-              <span className="h-1 w-1 rounded-full bg-gray-100" />
-              <span className="h-1 w-1 rounded-full bg-gray-100" />
             </div>
           </div>
 
