@@ -143,7 +143,7 @@ export default function AlertListPage() {
           <NotificationBell />
         </header>
 
-        <main className="flex flex-col gap-8 p-7">
+        <main className="flex flex-1 flex-col gap-8 p-7">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">이상 이벤트 알림함</h1>
           </div>
