@@ -74,7 +74,7 @@ const faqItems: FaqItem[] = [
 
 export default function FaqPage() {
   const { user, isLoading } = useAuth();
-  const [openIds, setOpenIds] = useState<Set<number>>(new Set([1]));
+  const [openIds, setOpenIds] = useState<Set<number>>(new Set());
 
   const toggleOpen = (id: number) => {
     setOpenIds((prev) => {

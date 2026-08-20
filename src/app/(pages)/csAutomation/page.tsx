@@ -629,7 +629,7 @@ function CsAutomationPageContent() {
             <Link href="/privacy" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
               개인정보처리방침
             </Link>
-            <Link href="/faq" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+            <Link href="/cs?view=inquiry" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
               고객센터
             </Link>
           </div>
