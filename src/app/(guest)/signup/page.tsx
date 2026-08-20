@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   sendEmailVerification,
@@ -202,6 +203,9 @@ export default function SignupPage() {
         </div>
 
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
+          <Link href="/" className="mb-1">
+            <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+          </Link>
           <div className="flex items-center gap-5">
             <span className="text-[10px] text-[#99A1AF]">서비스 이용약관</span>
             <span className="text-[10px] font-bold text-[#99A1AF]">개인정보처리방침</span>
@@ -382,6 +386,9 @@ export default function SignupPage() {
       </div>
 
       <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
+        <Link href="/" className="mb-1">
+          <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+        </Link>
         <div className="flex items-center gap-5">
           <span className="text-[10px] text-[#99A1AF]">서비스 이용약관</span>
           <span className="text-[10px] font-bold text-[#99A1AF]">개인정보처리방침</span>

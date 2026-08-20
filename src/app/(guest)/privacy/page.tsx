@@ -8,7 +8,7 @@ export default function PrivacyPage() {
       <header className="border-b border-slate-100">
         <div className="mx-auto flex h-20 max-w-[1512px] items-center justify-between px-6 lg:px-[120px]">
           <Link href="/" className="flex items-center">
-            <Image src="/logo3.png" alt="SELLoN" width={140} height={36} />
+            <Image src="/logo3.png" alt="SELLoN" width={140} height={30} priority />
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
@@ -53,6 +53,9 @@ export default function PrivacyPage() {
       </main>
 
       <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
+        <Link href="/" className="mb-1">
+          <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+        </Link>
         <div className="flex items-center gap-5">
           <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
             서비스 이용약관

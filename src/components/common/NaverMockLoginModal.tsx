@@ -3,9 +3,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 
-// 실제 네이버 로그인 화면이 아니라, 백엔드가 아직 Mock OAuth(가짜 도메인)라서
-// 그 자리를 대신하는 프론트 전용 목업 화면입니다.
-// 나중에 진짜 네이버 연동이 붙으면 이 모달은 지우고 authorizationUrl로 실제 이동시키면 됩니다.
 export default function NaverMockLoginModal({
   open,
   loading,
@@ -34,10 +31,9 @@ export default function NaverMockLoginModal({
           </button>
         </div>
 
-        <p className="pb-1 text-sm font-bold text-slate-900">네이버 로그인 (테스트용 화면)</p>
+        <p className="pb-1 text-sm font-bold text-slate-900">네이버 아이디로 로그인</p>
         <p className="pb-5 text-[12px] leading-relaxed text-slate-500">
-          실제 네이버 로그인이 아니라, 연동 흐름을 확인하기 위한 목업 화면입니다. 아이디/비밀번호는
-          검증하지 않고 아무 값이나 입력 후 로그인하면 연동이 완료됩니다.
+          아이디와 비밀번호를 입력해 주세요.
         </p>
 
         <div className="flex flex-col gap-2.5">

@@ -22,9 +22,7 @@ export default function Footer() {
               <img src="/logo3.png" alt="SELLoN" className="h-6 w-auto" />
             </div>
             <p className="text-sm leading-relaxed text-slate-400">
-              사업자등록번호 000-00-00000 · 수도권 AI 4반 11조
-              <br />
-              서울특별시 성동구 성수동
+              AIVLE SCHOOL · AI 수도권 4반 11조
             </p>
           </div>
           <div className="flex gap-16 sm:gap-24">

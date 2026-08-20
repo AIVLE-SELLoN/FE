@@ -20,44 +20,50 @@ const faqItems: FaqItem[] = [
   },
   {
     id: 2,
+    question: "도입을 검토 중인데 상담이나 소개서를 받아볼 수 있나요?",
+    answer:
+      "네, 가장 빠른 방법은 무료로 회원가입 후 채널을 직접 연결해보시는 거예요 (신용카드 등록 없이 5분이면 끝나요). 팀 단위 도입 상담이나 별도 소개 자료가 필요하시면, 가입 후 로그인해서 고객지원 메뉴의 1:1 문의로 남겨주세요 — 담당자가 확인하고 연락드려요.",
+  },
+  {
+    id: 3,
     question: "어떤 판매 채널을 연동할 수 있나요?",
     answer: "현재 쿠팡 윙, 네이버 스마트스토어센터, 지그재그 파트너센터 세 채널을 동시에 연동하고 모니터링할 수 있어요.",
   },
   {
-    id: 3,
+    id: 4,
     question: "무료로 이용할 수 있나요?",
     answer: "네, 신용카드 등록 없이 무료로 채널을 연결하고 시작할 수 있어요. 채널 연결은 언제든 해제할 수 있습니다.",
   },
   {
-    id: 4,
+    id: 5,
     question: "채널 연결(API 키 등록)이 어렵지는 않나요?",
     answer:
       "각 채널에서 발급받은 API 키를 등록하면 형식 검증부터 연결 상태 표시까지 자동으로 처리돼요. 등록은 보통 5분 이내로 끝나고, 연결에 실패하면 사유를 바로 안내해드려요.",
   },
   {
-    id: 5,
+    id: 6,
     question: "이상탐지는 어떤 원리로 동작하나요?",
     answer:
       "트렌드와 계절성을 분리한 통계 기반 분석으로 평소와 다른 진짜 이상 신호만 골라내요. 데이터가 아직 부족한 신규 상품은 이동평균 방식으로 자동 전환해 판단해요.",
   },
   {
-    id: 6,
+    id: 7,
     question: "AI가 제안한 개선안이 제 동의 없이 바로 반영되나요?",
     answer:
       "아니요, 개선안은 셀러가 직접 승인해야만 적용돼요. 반려하면 그 사유가 다음 분석에 반영되어 같은 제안이 반복되지 않도록 학습돼요.",
   },
   {
-    id: 7,
+    id: 8,
     question: "회원가입은 어떻게 하나요?",
     answer: "가입 페이지에서 이메일 등 기본 정보만 입력하면 바로 시작할 수 있어요.",
   },
   {
-    id: 8,
+    id: 9,
     question: "아이디나 비밀번호를 잊어버렸어요.",
     answer: "아이디/비밀번호 찾기 페이지에서 가입 시 등록한 정보로 아이디 확인 또는 임시 비밀번호 발급을 받을 수 있어요.",
   },
   {
-    id: 9,
+    id: 10,
     question: "여기서 답을 못 찾았어요. 더 궁금한 게 있으면 어떻게 문의하나요?",
     answer:
       "회원가입 후 로그인하시면 고객지원 메뉴에서 1:1 문의를 남기실 수 있고, 담당자가 확인 후 답변드려요.",
@@ -81,7 +87,7 @@ export default function FaqPage() {
       <header className="border-b border-slate-100">
         <div className="mx-auto flex h-20 max-w-[1512px] items-center justify-between px-6 lg:px-[120px]">
           <Link href="/" className="flex items-center">
-            <Image src="/logo3.png" alt="SELLoN" width={140} height={36} />
+            <Image src="/logo3.png" alt="SELLoN" width={140} height={30} priority />
           </Link>
           <div className="flex items-center gap-2 sm:gap-4">
             <Link
@@ -160,6 +166,9 @@ export default function FaqPage() {
       </main>
 
       <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
+        <Link href="/" className="mb-1">
+          <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+        </Link>
         <div className="flex items-center gap-5">
           <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
             서비스 이용약관

@@ -274,6 +274,7 @@ export default function MyPage() {
   useEffect(() => {
     if (withdrawStep !== "done") return;
     logout();
+    useAuthStore.getState().clearTokens();
     const timer = setTimeout(() => router.push("/login"), 3000);
     return () => clearTimeout(timer);
   }, [withdrawStep, router, logout]);
@@ -601,6 +602,7 @@ export default function MyPage() {
             <button
               onClick={() => {
                 logout();
+                useAuthStore.getState().clearTokens();
                 router.push("/login");
               }}
               className="flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-600"

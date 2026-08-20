@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -63,6 +64,9 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-3 border-t border-[#E5E7EB] bg-white px-6 py-8 text-center">
+          <Link href="/" className="mb-1">
+            <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+          </Link>
           <div className="flex items-center gap-5">
             {footerLinks.map((link) => (
               <Link
@@ -220,6 +224,9 @@ export default function LoginPage() {
 
       {/* Footer */}
       <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
+        <Link href="/" className="mb-1">
+          <Image src="/logo3.png" alt="SELLoN" width={110} height={24} />
+        </Link>
         <div className="flex items-center gap-5">
           {footerLinks.map((link) => (
             <Link
