@@ -316,7 +316,7 @@ function CsPageContent() {
         </header>
 
         {tab === "list" && (
-          <main className="flex flex-col gap-5 p-7">
+          <main className="flex flex-1 flex-col gap-5 p-7">
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">문의 내역 관리</h1>
@@ -471,7 +471,7 @@ function CsPageContent() {
         )}
 
         {tab === "detail" && (
-          <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-8 py-12">
+          <main className="mx-auto flex flex-1 w-full max-w-4xl flex-col gap-8 px-8 py-12">
             <button onClick={goToInquiryList} className="flex w-fit items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700">
               <ChevronLeft className="h-3.5 w-3.5" />
               문의내역으로 돌아가기
@@ -606,7 +606,7 @@ function CsPageContent() {
         )}
 
         {tab === "new" && (
-          <main className="flex flex-col gap-8 p-7">
+          <main className="flex flex-1 flex-col gap-8 p-7">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-slate-900">
                 {editingInquiryId ? "문의 수정하기" : "1:1 문의하기"}
@@ -807,7 +807,7 @@ function CsPageContent() {
         )}
 
         {tab === "faq" && (
-          <main className="flex flex-col gap-5 p-7">
+          <main className="flex flex-1 flex-col gap-5 p-7">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">SELLoN FAQ</h1>
               <p className="pt-2 text-sm leading-relaxed text-slate-500">
