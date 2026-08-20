@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useAuth } from "@/lib/auth/AuthContext";
+import UserMenu from "@/components/common/UserMenu";
 
 const navLinks = [
   { label: "기능", href: "#features" },
@@ -11,8 +12,7 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { user } = useAuth();
-  const homeHref = user?.role === "ADMIN" ? "/admin/cs" : "/channel";
+  const { user, isLoading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
@@ -32,23 +32,8 @@ export default function Navbar() {
           </nav>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
-          {user ? (
-            <Link
-              href={homeHref}
-              className="flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-slate-100 sm:px-3"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-indigo-50 text-sm font-bold text-indigo-500">
-                {user.name?.[0] ?? "?"}
-              </span>
-              <span className="hidden text-left sm:block">
-                <span className="block truncate text-sm font-bold leading-tight text-slate-800">
-                  {user.name}
-                </span>
-                <span className="block truncate text-xs leading-tight text-slate-500">
-                  {user.role === "ADMIN" ? "관리자 계정" : "Premium Plan"}
-                </span>
-              </span>
-            </Link>
+          {isLoading ? null : user ? (
+            <UserMenu user={user} />
           ) : (
             <>
               <Link

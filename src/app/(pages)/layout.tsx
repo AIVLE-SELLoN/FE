@@ -3,7 +3,7 @@ import Sidebar from '@/components/common/Sidebar';
 
 export default function PagesLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen min-w-[1280px]">
       <Suspense fallback={null}>
         <Sidebar />
       </Suspense>

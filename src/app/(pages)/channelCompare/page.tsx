@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import NotificationBell from "@/components/common/NotificationBell";
 import {
   CHANNEL_COLORS,
@@ -433,9 +434,15 @@ export default function ChannelComparisonPage() {
 
         <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
-            <span className="text-[10px] text-[#99A1AF]">서비스 이용약관</span>
-            <span className="text-[10px] font-bold text-[#99A1AF]">개인정보처리방침</span>
-            <span className="text-[10px] text-[#99A1AF]">고객센터</span>
+            <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              서비스 이용약관
+            </Link>
+            <Link href="/privacy" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              개인정보처리방침
+            </Link>
+            <Link href="/cs?view=inquiry" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              고객센터
+            </Link>
           </div>
           <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>
         </div>
