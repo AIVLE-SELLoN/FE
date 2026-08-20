@@ -254,6 +254,7 @@ function ReportPageContent() {
             </main>
           ) : noPending || !detail ? (
             <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-6 py-10">
+              <h1 className="text-xl font-bold text-slate-900">AI 인사이트 리포트</h1>
               <div className="rounded-2xl border border-slate-100 bg-white p-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
                 <p className="text-sm font-medium text-slate-500">처리할 개선안이 없습니다.</p>
                 <button
