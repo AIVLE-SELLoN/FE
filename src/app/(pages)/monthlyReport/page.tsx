@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileText, Download, AlertCircle } from "lucide-react";
+import { FileText, Download, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { getMonthlyReports, getLatestReport } from "@/app/api/monthlyReport";
 import {
   REPORT_STATUS_LABEL,
@@ -24,7 +24,16 @@ function statusBadgeClass(status: ReportResponse["status"]) {
   return "bg-rose-50 text-rose-600";
 }
 
-function ReportCard({ report }: { report: ReportResponse }) {
+function ReportCard({
+  report,
+  defaultViewerOpen = false,
+}: {
+  report: ReportResponse;
+  defaultViewerOpen?: boolean;
+}) {
+  const viewable = isDownloadable(report.status) && !!report.downloadUrl;
+  const [showViewer, setShowViewer] = useState(viewable && defaultViewerOpen);
+
   return (
     <div className="rounded-[20px] border border-slate-100 bg-white p-6 shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
       <div className="flex items-center justify-between">
@@ -52,16 +61,25 @@ function ReportCard({ report }: { report: ReportResponse }) {
         <p className="text-xs text-slate-400">
           {report.originalFileName ?? "생성된 파일 없음"}
         </p>
-        {isDownloadable(report.status) && report.downloadUrl ? (
-          <a
-            href={report.downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-600"
-          >
-            <Download className="h-3.5 w-3.5" />
-            PDF 다운로드
-          </a>
+        {viewable ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowViewer((v) => !v)}
+              className="flex items-center gap-1.5 rounded-xl border border-indigo-200 px-4 py-2 text-sm font-bold text-indigo-500 hover:bg-indigo-50"
+            >
+              {showViewer ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              {showViewer ? "미리보기 닫기" : "미리보기"}
+            </button>
+            <a
+              href={report.downloadUrl!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-600"
+            >
+              <Download className="h-3.5 w-3.5" />
+              PDF 다운로드
+            </a>
+          </div>
         ) : (
           <span className="flex items-center gap-1.5 text-xs text-slate-400">
             <AlertCircle className="h-3.5 w-3.5" />
@@ -69,6 +87,16 @@ function ReportCard({ report }: { report: ReportResponse }) {
           </span>
         )}
       </div>
+
+      {showViewer && viewable && (
+        <div className="mt-4 overflow-hidden rounded-2xl border border-slate-100">
+          <iframe
+            src={report.downloadUrl!}
+            title={`${report.reportMonth} 월간 리포트 PDF`}
+            className="h-[720px] w-full"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -172,7 +200,7 @@ export default function MonthlyReportPage() {
                   {latestError}
                 </div>
               ) : latest ? (
-                <ReportCard report={latest} />
+                <ReportCard report={latest} defaultViewerOpen />
               ) : (
                 <p className="py-8 text-center text-sm text-slate-400">아직 생성된 리포트가 없어요.</p>
               )
