@@ -249,11 +249,12 @@ function ReportPageContent() {
 
         {view === "insight" ? (
           loadingDetail ? (
-            <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+            <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-6 py-10">
               <p className="text-sm text-slate-400">불러오는 중...</p>
             </main>
           ) : noPending || !detail ? (
-            <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+            <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-6 py-10">
+              <h1 className="text-xl font-bold text-slate-900">AI 인사이트 리포트</h1>
               <div className="rounded-2xl border border-slate-100 bg-white p-10 text-center shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
                 <p className="text-sm font-medium text-slate-500">처리할 개선안이 없습니다.</p>
                 <button
@@ -265,7 +266,7 @@ function ReportPageContent() {
               </div>
             </main>
           ) : stage === "draft" ? (
-            <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 py-10">
+            <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-6 px-6 py-10">
               <div className="flex items-center justify-between">
                 <h1 className="text-xl font-bold text-slate-900">AI 인사이트 리포트</h1>
                 <button
@@ -383,7 +384,7 @@ function ReportPageContent() {
               </div>
             </main>
           ) : (
-            <main className="flex w-full flex-col gap-6 px-7 py-10">
+            <main className="flex flex-1 w-full flex-col gap-6 px-7 py-10">
               <h1 className="text-xl font-bold text-slate-900">개선안 반영</h1>
 
               <div className="flex flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)]">
@@ -513,7 +514,7 @@ function ReportPageContent() {
             </main>
           )
         ) : (
-          <main className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-6 py-10">
+          <main className="mx-auto flex flex-1 w-full max-w-3xl flex-col gap-5 px-6 py-10">
             <h1 className="text-xl font-bold text-slate-900">개선안 히스토리</h1>
 
             {history.length === 0 ? (
@@ -548,7 +549,7 @@ function ReportPageContent() {
           </main>
         )}
 
-        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] bg-white px-6 py-8 text-center">
+        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
             <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
               서비스 이용약관

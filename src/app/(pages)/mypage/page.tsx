@@ -44,7 +44,7 @@ function toLocal(recipients: Recipient[]): LocalRecipient[] {
 
 export default function MyPage() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, updateUser } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -175,6 +175,7 @@ export default function MyPage() {
       await uploadToPresignedUrl(presignedUrl, file, contentType);
       const updated = await completeProfileImageUpload(objectKey);
       setProfile(updated);
+      updateUser({ profileImageUrl: updated.profileImageUrl });
     } catch {
       setAccountError("프로필 이미지 업로드에 실패했습니다.");
     } finally {
@@ -188,6 +189,7 @@ export default function MyPage() {
     try {
       const updated = await removeProfileImage();
       setProfile(updated);
+      updateUser({ profileImageUrl: updated.profileImageUrl });
     } catch {
       setAccountError("프로필 이미지 제거에 실패했습니다.");
     } finally {
@@ -621,7 +623,7 @@ export default function MyPage() {
           </div>
         </main>
 
-        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] bg-white px-6 py-8 text-center">
+        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
             <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
               서비스 이용약관
