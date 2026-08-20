@@ -621,7 +621,7 @@ export default function MyPage() {
           </div>
         </main>
 
-        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] bg-white px-6 py-8 text-center">
+        <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
             <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
               서비스 이용약관
