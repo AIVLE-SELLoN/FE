@@ -138,7 +138,7 @@ export default function AlertListPage() {
   return (
     <div className="flex min-h-screen bg-white">
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
-        <header className="flex h-[92px] items-center justify-between border-b border-slate-200 bg-white px-6">
+        <header className="flex h-[52px] items-center justify-between border-b border-slate-200 bg-white px-6">
           <span className="text-xs font-medium text-slate-900">이상 이벤트 알림함</span>
           <NotificationBell />
         </header>
