@@ -30,6 +30,16 @@ const CHANNEL_BAR_COLOR: Record<string, string> = {
   ALL: "#6366F1",
 };
 
+// 시연용 상품 썸네일: raw DB `products` 테이블에 이미지 URL 컬럼이 없어
+// `public/products/{productGroupId}.png` 정적 파일로 대신한다.
+const PRODUCT_PLACEHOLDER = "/products/placeholder.png";
+
+function handleThumbnailError(e: React.SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  if (img.src.endsWith("placeholder.png")) return; // 플레이스홀더까지 실패하면 무한 루프 방지
+  img.src = PRODUCT_PLACEHOLDER;
+}
+
 function formatDate(iso: string | null) {
   if (!iso) return "-";
   const d = new Date(iso);
@@ -238,9 +248,19 @@ export default function AlertDetailPage() {
                     </div>
 
                     <div className="p-6 pb-4">
-                      <div className="flex aspect-square w-full items-center justify-center rounded-2xl bg-slate-100 text-xs text-slate-400">
-                        이미지 없음
-                      </div>
+                      {alert?.productGroupId ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={`/products/${alert.productGroupId}.png`}
+                          onError={handleThumbnailError}
+                          alt={alert.productGroupId}
+                          className="aspect-square w-full rounded-2xl bg-slate-100 object-cover"
+                        />
+                      ) : (
+                        <div className="flex aspect-square w-full items-center justify-center rounded-2xl bg-slate-100 text-xs text-slate-400">
+                          이미지 없음
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-3 px-6 pb-6">
@@ -259,7 +279,7 @@ export default function AlertDetailPage() {
                         </span>
                       </div>
                       <p className="pt-1 text-[11px] leading-relaxed text-slate-400">
-                        상품명·색상·이미지는 알림 데이터에 포함돼 있지 않아 표시하지 않았어요.
+                        상품명·색상은 알림 데이터에 포함돼 있지 않아 표시하지 않았어요.
                       </p>
                     </div>
 
@@ -288,9 +308,15 @@ export default function AlertDetailPage() {
 
         <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
-            <span className="text-[10px] text-[#99A1AF]">서비스 이용약관</span>
-            <span className="text-[10px] font-bold text-[#99A1AF]">개인정보처리방침</span>
-            <span className="text-[10px] text-[#99A1AF]">고객센터</span>
+            <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              서비스 이용약관
+            </Link>
+            <Link href="/privacy" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              개인정보처리방침
+            </Link>
+            <Link href="/cs?view=inquiry" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              고객센터
+            </Link>
           </div>
           <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>
         </div>

@@ -9,6 +9,21 @@ import { getAlerts, markAlertAsRead } from "@/app/api/alert";
 import type { AlertSummary } from "@/app/api/alert/types";
 import { ApiError } from "@/app/api/client";
 
+// 시연용 상품 썸네일: 알림 목록 응답에 productGroupId 필드가 없어
+// 메시지 앞머리("P001 · 쿠팡 · ...")에서 상품그룹 ID를 추출해 쓴다.
+// BE가 해당 필드를 내려주게 되면 이 파싱은 제거한다.
+const PRODUCT_PLACEHOLDER = "/products/placeholder.png";
+
+function extractProductGroupId(message: string): string | null {
+  return message.match(/\bP\d{3}\b/)?.[0] ?? null;
+}
+
+function handleThumbnailError(e: React.SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  if (img.src.endsWith("placeholder.png")) return; // 플레이스홀더까지 실패하면 무한 루프 방지
+  img.src = PRODUCT_PLACEHOLDER;
+}
+
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
@@ -193,16 +208,32 @@ export default function AlertListPage() {
                         <span className="text-sm text-slate-400">{g.date}</span>
                       </div>
                       <div className="flex flex-col gap-3">
-                        {g.items.map((a) => (
+                        {g.items.map((a) => {
+                          // 이상탐지 알림이면서 메시지에서 상품그룹 ID가 잡힐 때만 썸네일을 보여준다.
+                          // 월간 리포트 등 상품과 무관한 알림은 기존 경고 아이콘을 그대로 쓴다.
+                          const productGroupId =
+                            a.type === "ANOMALY_DETECTED" ? extractProductGroupId(a.message) : null;
+
+                          return (
                           <Link
                             key={a.notificationId}
                             href={`/alert/${a.notificationId}`}
                             onClick={() => handleClickAlert(a)}
                             className="flex items-center gap-5 rounded-2xl border border-slate-200 bg-white p-5 text-left hover:bg-slate-50"
                           >
-                            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
-                              <AlertTriangle className="h-6 w-6" />
-                            </span>
+                            {productGroupId ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={`/products/${productGroupId}.png`}
+                                onError={handleThumbnailError}
+                                alt={productGroupId}
+                                className="h-14 w-14 shrink-0 rounded-2xl bg-indigo-50 object-cover"
+                              />
+                            ) : (
+                              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                                <AlertTriangle className="h-6 w-6" />
+                              </span>
+                            )}
                             <div className="flex-1">
                               <p className="text-[15px] font-semibold text-slate-800">{a.message}</p>
                             </div>
@@ -211,7 +242,8 @@ export default function AlertListPage() {
                               {!a.isRead && <span className="h-2 w-2 rounded-full bg-indigo-500" />}
                             </div>
                           </Link>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
@@ -242,9 +274,15 @@ export default function AlertListPage() {
 
         <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
-            <span className="text-[10px] text-[#99A1AF]">서비스 이용약관</span>
-            <span className="text-[10px] font-bold text-[#99A1AF]">개인정보처리방침</span>
-            <span className="text-[10px] text-[#99A1AF]">고객센터</span>
+            <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              서비스 이용약관
+            </Link>
+            <Link href="/privacy" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              개인정보처리방침
+            </Link>
+            <Link href="/cs?view=inquiry" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              고객센터
+            </Link>
           </div>
           <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>
         </div>

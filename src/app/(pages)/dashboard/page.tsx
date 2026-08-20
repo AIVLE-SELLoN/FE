@@ -21,6 +21,17 @@ function channelDotColor(channel: string): string {
   return key ? CHANNEL_COLORS[key] : "#9A9AA5";
 }
 
+// 시연용 상품 썸네일: raw DB `products` 테이블에 이미지 URL 컬럼이 없어
+// `public/products/{productGroupId}.png` 정적 파일로 대신한다.
+// 파이프라인이 채널 이미지를 수집하게 되면 API 응답 필드로 교체한다.
+const PRODUCT_PLACEHOLDER = "/products/placeholder.png";
+
+function handleThumbnailError(e: React.SyntheticEvent<HTMLImageElement>) {
+  const img = e.currentTarget;
+  if (img.src.endsWith("placeholder.png")) return; // 플레이스홀더까지 실패하면 무한 루프 방지
+  img.src = PRODUCT_PLACEHOLDER;
+}
+
 function formatCount(n: number) {
   return `${n.toLocaleString()}건`;
 }
@@ -236,8 +247,12 @@ export default function DashboardPage() {
                       recentAlerts.map((a) => (
                         <div key={a.alertCode} className="flex items-center border-b border-slate-100 px-8 py-4 last:border-b-0">
                           <div className="flex w-[42%] items-center gap-3">
-                            <span
-                              className="h-10 w-10 shrink-0 rounded-lg"
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={a.productGroupId ? `/products/${a.productGroupId}.png` : PRODUCT_PLACEHOLDER}
+                              onError={handleThumbnailError}
+                              alt={a.productName ?? a.productGroupId ?? "상품 이미지"}
+                              className="h-10 w-10 shrink-0 rounded-lg object-cover"
                               style={{ backgroundColor: channelDotColor(a.channel) + "22" }}
                             />
                             <div>
@@ -275,9 +290,15 @@ export default function DashboardPage() {
         {/* Footer */}
         <div className="flex flex-col items-center gap-3 border-t border-[#E5E7EB] px-6 py-8 text-center">
           <div className="flex items-center gap-5">
-            <span className="text-[10px] text-[#99A1AF]">서비스 이용약관</span>
-            <span className="text-[10px] font-bold text-[#99A1AF]">개인정보처리방침</span>
-            <span className="text-[10px] text-[#99A1AF]">고객센터</span>
+            <Link href="/terms" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              서비스 이용약관
+            </Link>
+            <Link href="/privacy" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              개인정보처리방침
+            </Link>
+            <Link href="/cs?view=inquiry" className="text-[10px] text-[#99A1AF] hover:text-slate-500">
+              고객센터
+            </Link>
           </div>
           <p className="text-[9px] text-[#99A1AF]">© 2026 SELLoN Inc. All rights reserved.</p>
         </div>
