@@ -282,7 +282,7 @@ export default function ProductMappingPage() {
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
         {/* Top bar */}
         <header className="flex h-[52px] items-center justify-between border-b border-slate-200 bg-white px-6">
-          <span className="text-xs font-medium text-slate-900">상품 매핑 확인</span>
+          <span className="text-xs font-medium text-slate-900">상품 매핑 관리</span>
           <NotificationBell />
         </header>
 

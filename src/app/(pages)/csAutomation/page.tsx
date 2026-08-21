@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import NotificationBell from "@/components/common/NotificationBell";
 import {
   Search,
@@ -66,14 +66,14 @@ function availabilityBadge(status: "COMPLETED" | "EXPIRED") {
 
 function CsAutomationPageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const [tab, setTab] = useState<"create" | "history">(
-    searchParams.get("tab") === "history" ? "history" : "create",
-  );
-
-  useEffect(() => {
-    setTab(searchParams.get("tab") === "history" ? "history" : "create");
-  }, [searchParams]);
+  const tab: "create" | "history" = searchParams.get("tab") === "history" ? "history" : "create";
+  const goToTab = (next: "create" | "history") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", next);
+    router.push(`?${params.toString()}`);
+  };
 
   const [subView, setSubView] = useState<"list" | "detail">("list");
   const [selectedGuidelineId, setSelectedGuidelineId] = useState<string | null>(null);
@@ -270,7 +270,7 @@ function CsAutomationPageContent() {
         <header className="flex h-[52px] items-center gap-1.5 border-b border-slate-200 bg-white px-6 text-xs">
           <button
             onClick={() => {
-              setTab("create");
+              goToTab("create");
               setSubView("list");
             }}
             className="text-slate-500 hover:text-slate-700"
@@ -278,9 +278,22 @@ function CsAutomationPageContent() {
             가이드라인 리포트
           </button>
           <span className="text-slate-300">{">"}</span>
-          <span className="font-medium text-slate-900">
-            {tab === "history" ? "가이드라인 히스토리" : "가이드라인 목록"}
-          </span>
+          {tab === "history" ? (
+            <span className="font-medium text-slate-900">가이드라인 히스토리</span>
+          ) : subView === "detail" ? (
+            <>
+              <button
+                onClick={() => setSubView("list")}
+                className="text-slate-500 hover:text-slate-700"
+              >
+                가이드라인 목록
+              </button>
+              <span className="text-slate-300">{">"}</span>
+              <span className="font-medium text-slate-900">가이드라인 생성</span>
+            </>
+          ) : (
+            <span className="font-medium text-slate-900">가이드라인 목록</span>
+          )}
           <div className="ml-auto">
             <NotificationBell />
           </div>
