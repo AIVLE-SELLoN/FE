@@ -231,7 +231,9 @@ function ReportPageContent() {
     <div className="flex min-h-screen bg-white">
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
         <header className="flex h-[52px] items-center gap-1.5 border-b border-slate-200 bg-white px-6 text-xs">
-          <span className="text-slate-400">개선 리포트</span>
+          <button onClick={() => setView("insight")} className="text-slate-400 hover:text-slate-600">
+            개선 리포트
+          </button>
           <ChevronRight className="h-3 w-3 text-slate-300" />
           <span className="font-medium text-slate-900">
             {view === "insight" ? "AI 인사이트 리포트" : "개선안 히스토리"}

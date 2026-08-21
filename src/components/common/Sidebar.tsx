@@ -331,7 +331,7 @@ export default function Sidebar() {
 
       {/* Profile */}
       <div className="border-t border-slate-100 p-4">
-        <div className="flex items-center gap-3 p-2">
+        <Link href="/mypage" className="flex items-center gap-3 rounded-xl p-2 hover:bg-slate-50">
           <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-indigo-50 text-sm font-bold text-indigo-500">
             {user?.profileImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -346,7 +346,7 @@ export default function Sidebar() {
               {user?.role === 'ADMIN' ? '관리자 계정' : 'Premium Plan'}
             </p>
           </div>
-        </div>
+        </Link>
       </div>
     </aside>
   );

@@ -282,14 +282,14 @@ export default function ProductMappingPage() {
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
         {/* Top bar */}
         <header className="flex h-[52px] items-center justify-between border-b border-slate-200 bg-white px-6">
-          <span className="text-xs font-medium text-slate-900">상품 매핑 확인</span>
+          <span className="text-xs font-medium text-slate-900">상품 매핑 관리</span>
           <NotificationBell />
         </header>
 
         <main className="flex flex-1 flex-col gap-5 p-7">
           {/* Header row: title + tabs */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-slate-900">상품 매핑 확인</h1>
+            <h1 className="text-2xl font-bold text-slate-900">상품 매핑 관리</h1>
             <div className="flex gap-0.5 rounded-xl bg-slate-100 p-1">
               <button
                 onClick={() => setTab("unmatched")}

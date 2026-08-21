@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { FileText, Download, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ChevronRight, FileText, Download, AlertCircle, Eye, EyeOff } from "lucide-react";
+import NotificationBell from "@/components/common/NotificationBell";
 import { getMonthlyReports, getLatestReport } from "@/app/api/monthlyReport";
 import {
   REPORT_STATUS_LABEL,
@@ -101,8 +103,16 @@ function ReportCard({
   );
 }
 
-export default function MonthlyReportPage() {
-  const [tab, setTab] = useState<"latest" | "history">("latest");
+function MonthlyReportPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const tab: "latest" | "history" = searchParams.get("tab") === "list" ? "history" : "latest";
+  const setTab = (next: "latest" | "history") => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", next === "history" ? "list" : "report");
+    router.push(`?${params.toString()}`);
+  };
 
   const [latest, setLatest] = useState<ReportResponse | null>(null);
   const [latestLoading, setLatestLoading] = useState(true);
@@ -160,8 +170,17 @@ export default function MonthlyReportPage() {
   return (
     <div className="flex min-h-screen bg-white">
       <div className="flex flex-1 flex-col bg-[#F8F8FC]">
-        <header className="flex h-[52px] items-center border-b border-slate-200 bg-white px-6">
-          <span className="text-xs font-medium text-slate-900">월간 리포트</span>
+        <header className="flex h-[52px] items-center gap-1.5 border-b border-slate-200 bg-white px-6 text-xs">
+          <button onClick={() => setTab("latest")} className="text-slate-400 hover:text-slate-600">
+            월간 리포트
+          </button>
+          <ChevronRight className="h-3 w-3 text-slate-300" />
+          <span className="font-medium text-slate-900">
+            {tab === "history" ? "월간 리포트 목록" : "월간 리포트"}
+          </span>
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
         </header>
 
         <main className="flex flex-col gap-5 p-7">
@@ -223,5 +242,13 @@ export default function MonthlyReportPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function MonthlyReportPage() {
+  return (
+    <Suspense fallback={null}>
+      <MonthlyReportPageContent />
+    </Suspense>
   );
 }
