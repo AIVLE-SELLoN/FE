@@ -9,16 +9,25 @@ interface LoginRequest {
   password: string;
 }
 
-export async function postLogin(req: LoginRequest): Promise<LoginResponse> {
-  const { data, headers } = await api.postRaw<unknown>('/api/v1/sellon/auth/login', req);
-
+function applyTokensFromHeaders(headers: Headers) {
   const stripBearer = (v: string | null) => v?.replace(/^Bearer\s+/i, '') ?? null;
   const accessToken = stripBearer(headers.get('Authorization'));
   const refreshToken = stripBearer(headers.get('Refresh-Token'));
   if (accessToken && refreshToken) {
     useAuthStore.getState().setTokens(accessToken, refreshToken);
   }
+}
 
+export async function postLogin(req: LoginRequest): Promise<LoginResponse> {
+  const { data, headers } = await api.postRaw<unknown>('/api/v1/sellon/auth/login', req);
+  applyTokensFromHeaders(headers);
+  return loginResponseSchema.parse(data);
+}
+
+// 시연용 원클릭 로그인 버튼 전용 - 자격 증명 없이 서버에 설정된 데모 계정으로 바로 로그인
+export async function postDemoLogin(): Promise<LoginResponse> {
+  const { data, headers } = await api.postRaw<unknown>('/api/v1/sellon/auth/demo-login');
+  applyTokensFromHeaders(headers);
   return loginResponseSchema.parse(data);
 }
 
