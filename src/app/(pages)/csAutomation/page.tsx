@@ -31,14 +31,8 @@ import type {
 } from "@/app/api/csAutomation/types";
 import { ApiError } from "@/app/api/client";
 
-// ── 이 페이지는 백엔드 실제 구조에 맞춰 다시 만들었어요 ──
-// 가이드라인은 알림이 발생하면 외부 AI 서비스가 큐를 통해 "이미 완성된 PDF"로 보내주는 구조예요.
-// 그래서 화면에서 AI 초안을 생성하거나(모델 호출), 문의 리스트를 따로 불러오는 API는 없고,
-// 사람이 하는 건 (1) 상세에서 PDF를 확인하고 (2) 필요하면 코멘트와 함께 승인하고
-// (3) CS 담당자에게 메일로 보내는 것뿐이에요. 기존의 "AI 답변 초안 → MD 승인 → 발송 → 완료"
-// 4단계 마법사와 문의 리스트 패널은 대응하는 API가 없어서 걷어내고, 실제 3개 API
-// (GET /guidelines, GET /guidelines/{id}, POST /guidelines/{id}/approval, POST /guidelines/{id}/mail)로
-// 다시 짰어요.
+// 알림 발생 시 외부 AI가 이미 완성된 PDF를 큐로 보내주는 구조라, 화면에서 AI 초안 생성이나
+// 문의 리스트 조회는 하지 않는다 — PDF 확인, 코멘트와 함께 승인, CS 담당자 메일 발송만 한다.
 
 function formatBytes(bytes: number | null) {
   if (bytes == null) return "-";

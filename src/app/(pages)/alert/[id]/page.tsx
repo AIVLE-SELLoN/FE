@@ -10,12 +10,6 @@ import { getAlertDetail, markAlertAsRead } from "@/app/api/alert";
 import type { AlertDetailResponse } from "@/app/api/alert/types";
 import { ApiError } from "@/app/api/client";
 
-// ── 스크린샷 디자인대로 다시 짰어요. 다만 실제로 백엔드가 안 주는 정보(상품명/색상/상품 이미지,
-// AI 심층 분석 요청)는 만들어내지 않고, 있는 데이터(AlertDetailResponse.alert)로만 채웠어요.
-// - "AI 심층 분석" 버튼: 대응하는 백엔드 API가 없어서 비활성 처리했어요.
-// - "상품 정보"의 상품명/색상/이미지: 알림 응답에 없는 필드라 뺐고, SKU(productGroupId)와
-//   담당 채널만 실제 값으로 채웠어요. "상품 페이지 바로가기"도 연결할 확실한 URL이 없어 비활성입니다.
-
 const CHANNEL_LABEL: Record<string, string> = {
   COUPANG: "쿠팡",
   NAVER: "네이버 스마트스토어",

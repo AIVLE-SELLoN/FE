@@ -23,9 +23,6 @@ const AUTH_STORAGE_KEY = "sellon_auth_user";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// TODO: 지금은 localStorage에 로그인 정보를 흉내내서 저장하는 mock이에요.
-// 실제 백엔드 로그인 API 붙으면 여기를 세션/JWT 쿠키 기반으로 교체하고,
-// login()도 fetch 응답을 받아서 호출하도록 바꾸면 돼요.
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);

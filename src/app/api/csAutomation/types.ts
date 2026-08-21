@@ -32,7 +32,7 @@ export const guidelineDownloadResponseSchema = z.object({
 export type GuidelineDownloadResponse = z.infer<typeof guidelineDownloadResponseSchema>;
 
 // GET /api/v1/sellon/guidelines 목록 한 줄
-// 참고: 백엔드에 "처리중/대기중" 같은 워크플로 상태는 없어요. 가이드라인은 알림 발생 시
+// 가이드라인은 알림 발생 시
 // 외부 AI 서비스가 이미 완성된 PDF로 만들어 큐로 보내주고, status는 그 PDF가 아직
 // S3에 살아있는지(COMPLETED) 보관기한이 지났는지(EXPIRED)만 나타내요.
 export const guidelineListItemResponseSchema = z.object({

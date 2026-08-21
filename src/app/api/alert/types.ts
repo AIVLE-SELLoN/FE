@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// BE `NotificationType` enum과 맞춤 (2026-08-21 `MONTHLY_REPORT_GENERATED` 추가)
+// BE `NotificationType` enum과 맞춤
 // 도메인 알림이 늘어나면 여기도 같이 추가해야 목록 파싱이 깨지지 않아요.
 export const notificationTypeSchema = z.enum(['ANOMALY_DETECTED', 'MONTHLY_REPORT_GENERATED']);
 export type NotificationType = z.infer<typeof notificationTypeSchema>;
