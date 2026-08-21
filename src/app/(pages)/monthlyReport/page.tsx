@@ -176,7 +176,7 @@ function MonthlyReportPageContent() {
           </button>
           <ChevronRight className="h-3 w-3 text-slate-300" />
           <span className="font-medium text-slate-900">
-            {tab === "history" ? "월간 리포트 목록" : "월간 리포트"}
+            {tab === "history" ? "월간 리포트 히스토리" : "월간 리포트"}
           </span>
           <div className="ml-auto">
             <NotificationBell />

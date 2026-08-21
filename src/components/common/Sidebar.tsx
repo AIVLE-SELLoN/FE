@@ -72,7 +72,7 @@ const insightGroups: NavGroup[] = [
     href: '/monthlyReport',
     children: [
       { label: '월간 리포트', href: '/monthlyReport?tab=report' },
-      { label: '월간 리포트 목록', href: '/monthlyReport?tab=list' },
+      { label: '월간 리포트 히스토리', href: '/monthlyReport?tab=list' },
     ],
   },
   {
