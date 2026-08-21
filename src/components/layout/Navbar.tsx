@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { postDemoLogin } from "@/app/api/auth";
 import UserMenu from "@/components/common/UserMenu";
 
 const navLinks = [
@@ -12,7 +15,21 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, login } = useAuth();
+  const router = useRouter();
+  const [isDemoLoggingIn, setIsDemoLoggingIn] = useState(false);
+
+  const handleDemoLogin = async () => {
+    setIsDemoLoggingIn(true);
+    try {
+      const result = await postDemoLogin();
+      login({ email: result.email, name: result.name, role: result.role });
+      router.push(result.role === "ADMIN" ? "/admin/cs" : "/channel");
+    } catch {
+      window.alert("시연 계정 로그인에 실패했어요. 잠시 후 다시 시도해 주세요.");
+      setIsDemoLoggingIn(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
@@ -42,13 +59,15 @@ export default function Navbar() {
               >
                 로그인
               </Link>
-              <Link
-                href="/signup"
-                className="flex items-center gap-1.5 rounded-xl bg-[#101828] px-4 py-2.5 text-[15px] font-semibold tracking-tight text-white transition-transform hover:scale-[1.02] sm:px-6"
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={isDemoLoggingIn}
+                className="flex items-center gap-1.5 rounded-xl bg-[#101828] px-4 py-2.5 text-[15px] font-semibold tracking-tight text-white transition-transform hover:scale-[1.02] disabled:opacity-60 sm:px-6"
               >
-                무료로 시작하기
+                {isDemoLoggingIn ? "로그인 중..." : "시연 테스트"}
                 <span aria-hidden>→</span>
-              </Link>
+              </button>
             </>
           )}
         </div>
