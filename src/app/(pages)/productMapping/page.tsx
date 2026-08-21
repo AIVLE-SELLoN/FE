@@ -289,7 +289,7 @@ export default function ProductMappingPage() {
         <main className="flex flex-1 flex-col gap-5 p-7">
           {/* Header row: title + tabs */}
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-slate-900">상품 매핑 관리</h1>
+            <h1 className="text-2xl font-bold text-slate-900">상품 매핑 확인</h1>
             <div className="flex gap-0.5 rounded-xl bg-slate-100 p-1">
               <button
                 onClick={() => setTab("unmatched")}
