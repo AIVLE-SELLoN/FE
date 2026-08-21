@@ -12,13 +12,8 @@ import {
 } from "@/app/api/monthlyReport/types";
 import { ApiError } from "@/app/api/client";
 
-// ── 이 페이지는 백엔드 실제 구조에 맞춰 다시 만들었어요 ──
-// 백엔드의 "월간 리포트"는 외부 AI 서비스가 한 달에 한 번, 회사 단위로(상품별 아님)
-// PDF 리포트 하나를 만들어 전달하는 구조예요. GET /reports, /reports/latest, /reports/{reportId}
-// 세 API 모두 PDF 메타데이터(reportId/reportMonth/status/noticeMessage/originalFileName/downloadUrl)만
-// 내려주고, KPI 수치·항목별 감성 분포·채널 간 격차 분석 같은 구조화된 데이터는 없어요.
-// 그래서 기존의 KPI 카드 / 감성 도넛 / 갭 분석 슬라이드 / jsPDF로 가짜 PDF 생성하던 부분은 전부 제거하고,
-// 실제로 존재하는 "최신 리포트 1건 + 다운로드"와 "히스토리 목록"만 연결했어요.
+// 백엔드가 회사 단위 PDF 메타데이터만 내려주고 KPI 수치·감성 분포 같은 구조화 데이터는
+// 없어서, 최신 리포트 다운로드와 히스토리 목록만 다룬다.
 
 function statusBadgeClass(status: ReportResponse["status"]) {
   if (status === "SUCCESS") return "bg-emerald-50 text-emerald-600";

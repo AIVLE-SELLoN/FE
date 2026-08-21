@@ -17,11 +17,6 @@ import {
 } from "@/app/api/cs/types";
 import { ApiError } from "@/app/api/client";
 
-// ── 실제 백엔드(GET /inquiries/{id}, CsInquiryResponse) 기준으로 다시 만들었어요 ──
-// 기존엔 목데이터 + localStorage(lib/inquiryAnswers)로 답변을 저장했는데, 이제 실제
-// 문의를 불러와서 답변 등록/수정/삭제를 전부 백엔드 API로 처리해요.
-// authorName/createdAt도 백엔드에 새로 추가돼서 작성자·등록일을 그대로 보여줘요.
-
 export default function AdminCsDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
